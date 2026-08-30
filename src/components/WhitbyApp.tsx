@@ -12,7 +12,7 @@ import {
   scaleQty,
   scaleUsd,
 } from "@/lib/calc";
-import { NAMED_PRESETS, SAMPLE_SHEET, type ExtractedSheet, type Level } from "@/lib/types";
+import { NAMED_PRESETS, type ExtractedSheet, type Level } from "@/lib/types";
 
 const KEY_STORAGE = "whitby_gemini_key";
 const MULTIPLIER_STORAGE = "whitby_multipliers";
@@ -148,14 +148,12 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
   const customValid = customRaw.trim() !== "" && Number.isFinite(customMultiplier) && customMultiplier > 0;
 
   return (
-    <main className="mx-auto min-h-dvh max-w-[430px] px-4 pb-[calc(32px+var(--safe-bottom))] pt-[calc(16px+var(--safe-top))]">
-      <header className="mb-5 flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <img src="/icon-192.png" alt="" className="h-[72px] w-[72px] shrink-0 rounded-[20px]" />
-          <div className="min-w-0">
-            <p className="text-[24px] font-semibold tracking-tight text-[#3a2a30]">Whitby</p>
-            <p className="mt-0.5 text-[12px] text-[#8a6f78]">Limit VWAP · 배수 계산</p>
-          </div>
+    <main className="relative mx-auto min-h-dvh max-w-[430px]">
+      <TulipWatermark />
+      <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#eedfe4]/70 bg-[#f8f2f4]/90 px-4 pb-3 pt-[calc(14px+var(--safe-top))] backdrop-blur-md">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <TulipMark />
+          <p className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">Whitby</p>
         </div>
         <button
           type="button"
@@ -165,6 +163,8 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
           {showKey ? "닫기" : keySaved ? "설정 · 저장됨" : "설정"}
         </button>
       </header>
+
+      <div className="px-4 pb-[calc(32px+var(--safe-bottom))] pt-4">
 
       {showKey && (
         <section className="card mb-4 p-4">
@@ -203,8 +203,8 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f8e9ee] text-2xl font-medium text-[#c45c78]">
-              +
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#f8e9ee]">
+              <TulipMark size={36} />
             </span>
             <span className="mt-4 text-base font-semibold">시트 사진 올리기</span>
             <span className="mt-1 text-xs leading-relaxed text-[#8a6f78]">
@@ -233,27 +233,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
         <div className="mb-3 rounded-3xl bg-rose-50 px-4 py-3 text-sm text-rose-600 ring-1 ring-rose-100">{error}</div>
       )}
 
-      <div className="mb-5 flex gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setSheet(SAMPLE_SHEET);
-            setSheetKey((n) => n + 1);
-            setModelUsed("sample");
-            setError(null);
-            setShowSource(false);
-          }}
-          className="rounded-full bg-white px-3.5 py-1.5 text-xs font-medium text-[#8a6f78] ring-1 ring-[#eedfe4]"
-        >
-          샘플로 미리보기
-        </button>
-      </div>
-
-      {!sheet ? (
-        <p className="px-1 text-center text-sm leading-relaxed text-[#8a6f78]">
-          시트를 올리면 미영 · 레엘 · 용운 · 추가 배수가 여기에 나타납니다.
-        </p>
-      ) : (
+      {sheet && (
         <div className="space-y-3">
           {NAMED_PRESETS.map((preset) => (
             <MultiplierCard
@@ -300,7 +280,36 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
           )}
         </div>
       )}
+      </div>
     </main>
+  );
+}
+
+function TulipMark({ size = 28 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" aria-hidden className="shrink-0">
+      <path d="M24 44V22" stroke="#6B9A6A" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M24 36c-6 1.5-10 6-11 11" stroke="#6B9A6A" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M24 34c5 2 9 7 10 12" stroke="#6B9A6A" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M24 8c-7 6-11 13-8 18 4 6 8 6 8 6s4 0 8-6c3-5-1-12-8-18Z" fill="#D46A86" />
+      <path d="M24 8c-2 8-1 16 0 22" stroke="#F3C3D0" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function TulipWatermark() {
+  return (
+    <svg
+      className="pointer-events-none absolute -right-8 top-16 h-56 w-56 opacity-[0.11]"
+      viewBox="0 0 48 48"
+      fill="none"
+      aria-hidden
+    >
+      <path d="M24 44V22" stroke="#C45C78" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M24 36c-6 1.5-10 6-11 11" stroke="#C45C78" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M24 34c5 2 9 7 10 12" stroke="#C45C78" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M24 8c-7 6-11 13-8 18 4 6 8 6 8 6s4 0 8-6c3-5-1-12-8-18Z" fill="#C45C78" />
+    </svg>
   );
 }
 
