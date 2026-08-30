@@ -32,8 +32,22 @@ export function formatMultiplier(value: number): string {
   return String(value);
 }
 
-export function parseNumber(raw: string): number {
-  const cleaned = raw.replace(/,/g, "").trim();
-  const n = Number(cleaned);
-  return Number.isFinite(n) ? n : 0;
+export function formatUsd(value: number): string {
+  if (!Number.isFinite(value)) return "—";
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+export function remainingPercent(cash: number | null, start: number | null): number | null {
+  if (cash == null || start == null || !Number.isFinite(cash) || !Number.isFinite(start) || start === 0) {
+    return null;
+  }
+  return (cash / start) * 100;
+}
+
+export function scaleUsd(value: number | null, multiplier: number): number | null {
+  if (value == null || !Number.isFinite(value) || !Number.isFinite(multiplier)) return null;
+  return value * multiplier;
 }

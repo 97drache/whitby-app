@@ -10,20 +10,31 @@ There are TWO separate "Limit Vwap" blocks:
 1) UPPER Limit Vwap = BUY orders. Columns are 매수가 (buy price) and 개수 (quantity). There may be 1, 2, or 3 rows.
 2) LOWER Limit Vwap = SELL orders. Columns are 매도가 (sell price) and 개수 (quantity). There may be 1, 2, or 3 rows.
 
-"현재 보유 개수" is a single number on the RIGHT-MIDDLE of the upper block, often on a light green background. Do not confuse it with 직전 매매 개수, 잔금, 종가, or 평단.
+"현재 보유 개수" is a single number on the RIGHT of the UPPER block, often on a light green background. Do not confuse it with 직전 매매 개수, 잔금, 종가, or 평단.
+
+On the RIGHT of the LOWER/middle block:
+- "현사이클 차수" is a cycle number, often like 29차. Return just the integer.
+- "현사이클 시작 $" is a dollar amount (may include commas).
+- "잔금 $" is a dollar amount on a light green background. Do not confuse it with 현사이클 실현수익 or 당일실현.
 
 Return ONLY JSON with this shape:
 {
   "buys": [{"price": number, "qty": number}],
   "sells": [{"price": number, "qty": number}],
-  "holdings": number
+  "holdings": number,
+  "cycle": number,
+  "startUsd": number,
+  "cashUsd": number
 }
 
 Rules:
 - prices are the left number in each Limit Vwap row; qty is the right number.
 - Use dots as decimal separators. Strip thousands commas.
 - Do not invent rows. Omit empty rows.
-- holdings must be the 현재 보유 개수 integer.`;
+- holdings must be the 현재 보유 개수 integer.
+- cycle must be the 현사이클 차수 integer (strip 차).
+- startUsd is 현사이클 시작 $.
+- cashUsd is 잔금 $.`;
 
 const MODELS = [
   process.env.GEMINI_MODEL,
@@ -41,6 +52,12 @@ function asLevel(value: unknown): Level | null {
   return { price, qty };
 }
 
+function asMoney(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = Number(String(value).replace(/,/g, "").replace(/[차$]/g, "").trim());
+  return Number.isFinite(n) ? n : null;
+}
+
 function parseSheet(raw: unknown): ExtractedSheet {
   if (!raw || typeof raw !== "object") {
     throw new Error("시트 형식을 읽지 못했습니다.");
@@ -55,7 +72,14 @@ function parseSheet(raw: unknown): ExtractedSheet {
   const holdings = Number(data.holdings);
   if (!buys.length) throw new Error("매수 Limit VWAP를 찾지 못했습니다.");
   if (!Number.isFinite(holdings)) throw new Error("현재 보유 개수를 찾지 못했습니다.");
-  return { buys, sells, holdings };
+  return {
+    buys,
+    sells,
+    holdings,
+    cycle: asMoney(data.cycle),
+    startUsd: asMoney(data.startUsd),
+    cashUsd: asMoney(data.cashUsd),
+  };
 }
 
 function extractJson(text: string): unknown {

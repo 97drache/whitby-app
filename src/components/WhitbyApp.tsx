@@ -6,12 +6,16 @@ import {
   formatMultiplier,
   formatPrice,
   formatQty,
+  formatUsd,
+  remainingPercent,
   scaleLevels,
   scaleQty,
+  scaleUsd,
 } from "@/lib/calc";
-import { PRESET_MULTIPLIERS, SAMPLE_SHEET, type ExtractedSheet, type Level } from "@/lib/types";
+import { NAMED_PRESETS, SAMPLE_SHEET, type ExtractedSheet, type Level } from "@/lib/types";
 
 const KEY_STORAGE = "whitby_gemini_key";
+const MULTIPLIER_STORAGE = "whitby_multipliers";
 
 function readStoredKey(): string {
   try {
@@ -26,6 +30,34 @@ function writeStoredKey(value: string) {
     const trimmed = value.trim();
     if (trimmed) localStorage.setItem(KEY_STORAGE, trimmed);
     else localStorage.removeItem(KEY_STORAGE);
+  } catch {
+    // Private browsing can block localStorage.
+  }
+}
+
+function defaultMultipliers(): Record<string, number> {
+  return Object.fromEntries(NAMED_PRESETS.map((p) => [p.id, p.defaultMultiplier]));
+}
+
+function readStoredMultipliers(): Record<string, number> {
+  const defaults = defaultMultipliers();
+  try {
+    const raw = localStorage.getItem(MULTIPLIER_STORAGE);
+    if (!raw) return defaults;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    for (const preset of NAMED_PRESETS) {
+      const n = Number(parsed[preset.id]);
+      if (Number.isFinite(n) && n > 0) defaults[preset.id] = n;
+    }
+    return defaults;
+  } catch {
+    return defaults;
+  }
+}
+
+function writeStoredMultipliers(value: Record<string, number>) {
+  try {
+    localStorage.setItem(MULTIPLIER_STORAGE, JSON.stringify(value));
   } catch {
     // Private browsing can block localStorage.
   }
@@ -46,6 +78,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
   const [showKey, setShowKey] = useState(false);
   const [showSource, setShowSource] = useState(false);
   const [sheetKey, setSheetKey] = useState(0);
+  const [multipliers, setMultipliers] = useState<Record<string, number>>(defaultMultipliers);
 
   function rememberKey(value: string) {
     setApiKey(value);
@@ -54,11 +87,20 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
     setKeySaved(value.trim().length > 0);
   }
 
+  function saveMultiplier(id: string, value: number) {
+    setMultipliers((prev) => {
+      const next = { ...prev, [id]: value };
+      writeStoredMultipliers(next);
+      return next;
+    });
+  }
+
   useEffect(() => {
     const stored = readStoredKey();
     setApiKey(stored);
     apiKeyRef.current = stored;
     setKeySaved(stored.length > 0);
+    setMultipliers(readStoredMultipliers());
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
@@ -107,20 +149,18 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
 
   return (
     <main className="mx-auto min-h-dvh max-w-[430px] px-4 pb-[calc(32px+var(--safe-bottom))] pt-[calc(16px+var(--safe-top))]">
-      <header className="mb-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src="/icon-192.png" alt="" className="h-11 w-11 rounded-[13px]" />
-          <div>
-            <p className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">
-              Whitby
-            </p>
+      <header className="mb-5 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <img src="/icon-192.png" alt="" className="h-[72px] w-[72px] shrink-0 rounded-[20px]" />
+          <div className="min-w-0">
+            <p className="text-[24px] font-semibold tracking-tight text-[#3a2a30]">Whitby</p>
             <p className="mt-0.5 text-[12px] text-[#8a6f78]">Limit VWAP · 배수 계산</p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setShowKey((v) => !v)}
-          className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#8a6f78] ring-1 ring-[#eedfe4]"
+          className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#8a6f78] ring-1 ring-[#eedfe4]"
         >
           {showKey ? "닫기" : keySaved ? "설정 · 저장됨" : "설정"}
         </button>
@@ -146,6 +186,8 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
         </section>
       )}
 
+      {sheet && <CycleBanner sheet={sheet} />}
+
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
@@ -153,10 +195,10 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
       >
         {preview ? (
           <div className="flex items-center gap-3 p-3">
-            <img src={preview} alt="올린 시트" className="h-16 w-16 rounded-2xl object-cover ring-1 ring-stone-200" />
+            <img src={preview} alt="올린 시트" className="h-16 w-16 rounded-2xl object-cover ring-1 ring-[#eedfe4]" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">{busy ? "숫자를 읽는 중…" : "시트 사진"}</p>
-              <p className="text-xs text-stone-500">탭해서 다른 사진으로 바꾸기 · 저장하지 않음</p>
+              <p className="text-xs text-[#8a6f78]">탭해서 다른 사진으로 바꾸기 · 저장하지 않음</p>
             </div>
           </div>
         ) : (
@@ -184,15 +226,11 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
       />
 
       {busy && (
-        <div className="card mb-3 px-4 py-3 text-sm text-stone-500">
-          매수 · 매도 · 보유 개수를 읽고 있습니다…
-        </div>
+        <div className="card mb-3 px-4 py-3 text-sm text-[#8a6f78]">매수 · 매도 · 보유 · 사이클을 읽고 있습니다…</div>
       )}
 
       {error && (
-        <div className="mb-3 rounded-3xl bg-rose-50 px-4 py-3 text-sm text-rose-600 ring-1 ring-rose-100">
-          {error}
-        </div>
+        <div className="mb-3 rounded-3xl bg-rose-50 px-4 py-3 text-sm text-rose-600 ring-1 ring-rose-100">{error}</div>
       )}
 
       <div className="mb-5 flex gap-2">
@@ -212,22 +250,31 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
       </div>
 
       {!sheet ? (
-        <p className="px-1 text-center text-sm leading-relaxed text-stone-400">
-          시트를 올리면 9배수, 1.5배수, 6배수, 직접 입력이 여기에 나타납니다.
+        <p className="px-1 text-center text-sm leading-relaxed text-[#8a6f78]">
+          시트를 올리면 미영 · 레엘 · 용운 · 추가 배수가 여기에 나타납니다.
         </p>
       ) : (
         <div className="space-y-3">
-          {PRESET_MULTIPLIERS.map((n) => (
-            <MultiplierCard key={n} title={`${formatMultiplier(n)}배수`} multiplier={n} sheet={sheet} />
+          {NAMED_PRESETS.map((preset) => (
+            <MultiplierCard
+              key={preset.id}
+              name={preset.name}
+              multiplier={multipliers[preset.id] ?? preset.defaultMultiplier}
+              sheet={sheet}
+              onSave={(value) => saveMultiplier(preset.id, value)}
+            />
           ))}
 
           <section className="card p-4">
             <div className="mb-3 flex items-end justify-between gap-3">
               <div>
-                <p className="text-xs text-[#8a6f78]">직접 입력</p>
-                <p className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">
+                <p className="text-xs text-[#8a6f78]">추가</p>
+                <p className="text-[20px] font-semibold tracking-tight text-[#3a2a30]">
                   {customValid ? `${formatMultiplier(customMultiplier)}배수` : "배수"}
                 </p>
+                {customValid && (
+                  <ScaledCash cashUsd={sheet.cashUsd} multiplier={customMultiplier} />
+                )}
               </div>
               <input
                 inputMode="decimal"
@@ -240,15 +287,11 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
             {customValid ? (
               <ScaledTable sheet={sheet} multiplier={customMultiplier} />
             ) : (
-              <p className="text-xs text-stone-500">배수를 넣으면 바로 계산합니다.</p>
+              <p className="text-xs text-[#8a6f78]">배수를 넣으면 바로 계산합니다.</p>
             )}
           </section>
 
-          <button
-            type="button"
-            onClick={() => setShowSource((v) => !v)}
-            className="w-full py-2 text-center text-xs text-stone-400"
-          >
+          <button type="button" onClick={() => setShowSource((v) => !v)} className="w-full py-2 text-center text-xs text-[#8a6f78]">
             {showSource ? "읽어온 값 접기" : "읽어온 값 수정"}
           </button>
 
@@ -258,6 +301,46 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
         </div>
       )}
     </main>
+  );
+}
+
+function CycleBanner({ sheet }: { sheet: ExtractedSheet }) {
+  const percent = remainingPercent(sheet.cashUsd, sheet.startUsd);
+  return (
+    <section className="card mb-4 p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-sm font-semibold text-[#3a2a30]">
+          현사이클 {sheet.cycle != null ? `${formatQty(sheet.cycle)}차` : "—"}
+        </p>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[#8a6f78]">
+        <div className="rounded-2xl bg-[#fdf7f9] px-3 py-2">
+          <p>시작 $</p>
+          <p className="mt-0.5 text-[15px] font-medium tabular text-[#3a2a30]">
+            {sheet.startUsd != null ? formatUsd(sheet.startUsd) : "—"}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-[#fdf7f9] px-3 py-2">
+          <p>잔금 $</p>
+          <p className="mt-0.5 text-[15px] font-medium tabular text-[#3a2a30]">
+            {sheet.cashUsd != null ? formatUsd(sheet.cashUsd) : "—"}
+          </p>
+        </div>
+      </div>
+      <p className="mt-3 text-[32px] font-semibold leading-none tabular text-[#c45c78]">
+        {percent != null ? `${percent.toFixed(1)}%` : "—"}
+        <span className="ml-1 text-sm font-medium text-[#8a6f78]">남음</span>
+      </p>
+    </section>
+  );
+}
+
+function ScaledCash({ cashUsd, multiplier }: { cashUsd: number | null; multiplier: number }) {
+  const scaled = scaleUsd(cashUsd, multiplier);
+  return (
+    <p className="mt-1 text-sm font-semibold tabular text-[#c45c78]">
+      잔금 ${scaled != null ? formatUsd(scaled) : "—"}
+    </p>
   );
 }
 
@@ -304,13 +387,42 @@ function ExtractedEditor({
   return (
     <div className="card space-y-4 p-4">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm text-stone-500">숫자를 고치면 배수도 바로 바뀝니다.</p>
+        <p className="text-sm text-[#8a6f78]">숫자를 고치면 배수도 바로 바뀝니다.</p>
         {modelUsed && modelUsed !== "sample" && (
-          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] text-stone-400">{modelUsed}</span>
+          <span className="rounded-full bg-[#fdf7f9] px-2 py-0.5 text-[10px] text-[#8a6f78]">{modelUsed}</span>
         )}
       </div>
+      <div className="grid grid-cols-3 gap-2">
+        <label className="text-xs text-[#8a6f78]">
+          차수
+          <NumberField
+            value={sheet.cycle ?? 0}
+            inputMode="numeric"
+            className="mt-1 w-full rounded-2xl bg-[#fdf7f9] px-2 py-2 text-sm tabular outline-none"
+            onChange={(cycle) => onChange({ ...sheet, cycle })}
+          />
+        </label>
+        <label className="text-xs text-[#8a6f78]">
+          시작 $
+          <NumberField
+            value={sheet.startUsd ?? 0}
+            inputMode="decimal"
+            className="mt-1 w-full rounded-2xl bg-[#fdf7f9] px-2 py-2 text-sm tabular outline-none"
+            onChange={(startUsd) => onChange({ ...sheet, startUsd })}
+          />
+        </label>
+        <label className="text-xs text-[#8a6f78]">
+          잔금 $
+          <NumberField
+            value={sheet.cashUsd ?? 0}
+            inputMode="decimal"
+            className="mt-1 w-full rounded-2xl bg-[#fdf7f9] px-2 py-2 text-sm tabular outline-none"
+            onChange={(cashUsd) => onChange({ ...sheet, cashUsd })}
+          />
+        </label>
+      </div>
       <div>
-        <p className="mb-2 text-xs text-stone-500">현재 보유 개수</p>
+        <p className="mb-2 text-xs text-[#8a6f78]">현재 보유 개수</p>
         <NumberField
           value={sheet.holdings}
           inputMode="numeric"
@@ -340,11 +452,11 @@ function LevelEditor({
     <div>
       <div className="mb-2 flex items-center justify-between">
         <p className={`text-xs font-medium ${accent}`}>{label}</p>
-        <button type="button" onClick={() => onChange([...levels, { price: 0, qty: 0 }])} className="text-[11px] text-stone-400">
+        <button type="button" onClick={() => onChange([...levels, { price: 0, qty: 0 }])} className="text-[11px] text-[#8a6f78]">
           행 추가
         </button>
       </div>
-      <div className="mb-1 grid grid-cols-[1fr_1fr_auto] gap-2 px-1 text-[11px] text-stone-400">
+      <div className="mb-1 grid grid-cols-[1fr_1fr_auto] gap-2 px-1 text-[11px] text-[#8a6f78]">
         <span>{tone === "buy" ? "매수가" : "매도가"}</span>
         <span>개수</span>
         <span className="w-8" />
@@ -355,7 +467,7 @@ function LevelEditor({
             <NumberField
               value={level.price}
               inputMode="decimal"
-              className="rounded-2xl bg-stone-50 px-3 py-2 text-sm tabular outline-none ring-1 ring-stone-200"
+              className="rounded-2xl bg-[#fdf7f9] px-3 py-2 text-sm tabular outline-none ring-1 ring-[#eedfe4]"
               onChange={(price) => {
                 const next = [...levels];
                 next[i] = { ...level, price };
@@ -365,14 +477,14 @@ function LevelEditor({
             <NumberField
               value={level.qty}
               inputMode="numeric"
-              className="rounded-2xl bg-stone-50 px-3 py-2 text-sm tabular outline-none ring-1 ring-stone-200"
+              className="rounded-2xl bg-[#fdf7f9] px-3 py-2 text-sm tabular outline-none ring-1 ring-[#eedfe4]"
               onChange={(qty) => {
                 const next = [...levels];
                 next[i] = { ...level, qty };
                 onChange(next);
               }}
             />
-            <button type="button" onClick={() => onChange(levels.filter((_, idx) => idx !== i))} className="px-2 text-xs text-stone-400">
+            <button type="button" onClick={() => onChange(levels.filter((_, idx) => idx !== i))} className="px-2 text-xs text-[#8a6f78]">
               삭제
             </button>
           </div>
@@ -382,15 +494,65 @@ function LevelEditor({
   );
 }
 
-function MultiplierCard({ title, multiplier, sheet }: { title: string; multiplier: number; sheet: ExtractedSheet }) {
+function MultiplierCard({
+  name,
+  multiplier,
+  sheet,
+  onSave,
+}: {
+  name: string;
+  multiplier: number;
+  sheet: ExtractedSheet;
+  onSave: (value: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(multiplier));
+
+  useEffect(() => {
+    setDraft(String(multiplier));
+  }, [multiplier]);
+
+  function save() {
+    const n = Number(draft.replace(/,/g, ""));
+    if (!Number.isFinite(n) || n <= 0) return;
+    onSave(n);
+    setEditing(false);
+  }
+
   return (
     <section className="card p-4">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">{title}</h2>
-        {!Number.isInteger(multiplier) && (
-          <span className="rounded-full bg-[#f8e9ee] px-2 py-0.5 text-[11px] font-medium text-[#c45c78]">반올림</span>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-[20px] font-semibold tracking-tight text-[#3a2a30]">
+            {name} ({formatMultiplier(multiplier)}배수)
+          </h2>
+          <ScaledCash cashUsd={sheet.cashUsd} multiplier={multiplier} />
+        </div>
+        {!editing ? (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="shrink-0 rounded-full bg-[#fdf7f9] px-3 py-1 text-[11px] font-medium text-[#c45c78]"
+          >
+            배수 변경
+          </button>
+        ) : (
+          <div className="flex shrink-0 items-center gap-1">
+            <input
+              inputMode="decimal"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              className="w-16 rounded-xl bg-[#fdf7f9] px-2 py-1 text-right text-sm tabular outline-none ring-1 ring-[#eedfe4]"
+            />
+            <button type="button" onClick={save} className="rounded-full bg-[#c45c78] px-3 py-1 text-[11px] font-medium text-white">
+              저장
+            </button>
+          </div>
         )}
       </div>
+      {!Number.isInteger(multiplier) && (
+        <p className="mb-3 text-[11px] font-medium text-[#c45c78]">개수는 반올림합니다.</p>
+      )}
       <ScaledTable sheet={sheet} multiplier={multiplier} />
     </section>
   );
@@ -417,14 +579,14 @@ function LevelTable({ caption, tone, rows }: { caption: string; tone: "buy" | "s
   const qtyClass = tone === "buy" ? "text-emerald-700" : "text-rose-600";
   return (
     <div>
-      <div className="mb-1.5 grid grid-cols-2 px-1 text-[11px] text-stone-400">
+      <div className="mb-1.5 grid grid-cols-2 px-1 text-[11px] text-[#8a6f78]">
         <span>{caption}가</span>
         <span className="text-right">개수</span>
       </div>
       <ul className="space-y-1.5">
         {rows.map((row, i) => (
-          <li key={`${caption}-${i}-${row.price}`} className="grid grid-cols-2 rounded-2xl bg-stone-50 px-4 py-2.5 text-[17px] tabular">
-            <span className="text-stone-800">{formatPrice(row.price)}</span>
+          <li key={`${caption}-${i}-${row.price}`} className="grid grid-cols-2 rounded-2xl bg-[#fdf7f9] px-4 py-2.5 text-[17px] tabular">
+            <span className="text-[#3a2a30]">{formatPrice(row.price)}</span>
             <span className={`text-right font-semibold ${qtyClass}`}>{formatQty(row.qty)}</span>
           </li>
         ))}
