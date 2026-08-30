@@ -111,16 +111,16 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
         <div className="flex items-center gap-3">
           <img src="/icon-192.png" alt="" className="h-11 w-11 rounded-[13px]" />
           <div>
-            <p className="font-[family-name:var(--font-display)] text-[30px] leading-none tracking-wide text-stone-900">
+            <p className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">
               Whitby
             </p>
-            <p className="mt-1 text-[12px] text-stone-500">Limit VWAP · 배수 계산</p>
+            <p className="mt-0.5 text-[12px] text-[#8a6f78]">Limit VWAP · 배수 계산</p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setShowKey((v) => !v)}
-          className="rounded-full bg-white px-3 py-1.5 text-xs text-stone-500 ring-1 ring-stone-200"
+          className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#8a6f78] ring-1 ring-[#eedfe4]"
         >
           {showKey ? "닫기" : keySaved ? "설정 · 저장됨" : "설정"}
         </button>
@@ -129,7 +129,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
       {showKey && (
         <section className="card mb-4 p-4">
           <p className="text-sm font-medium">Gemini API 키</p>
-          <p className="mt-1 text-xs leading-relaxed text-stone-500">
+          <p className="mt-1 text-xs leading-relaxed text-[#8a6f78]">
             이 폰에만 저장되며 한 번 넣으면 다시 묻지 않습니다. 사진은 서버에 남기지 않습니다.
           </p>
           <input
@@ -138,9 +138,9 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
             value={apiKey}
             onChange={(e) => rememberKey(e.target.value)}
             placeholder="AIza..."
-            className="mt-3 w-full rounded-2xl bg-stone-50 px-3 py-2.5 text-sm outline-none ring-1 ring-stone-200 focus:ring-stone-400"
+            className="mt-3 w-full rounded-2xl bg-[#fdf7f9] px-3 py-2.5 text-sm outline-none ring-1 ring-[#eedfe4] focus:ring-[#c45c78]"
           />
-          <p className={`mt-2 text-xs ${keySaved ? "text-emerald-700" : "text-stone-400"}`}>
+          <p className={`mt-2 text-xs ${keySaved ? "text-[#2a9a74]" : "text-[#8a6f78]"}`}>
             {keySaved ? "이 기기에 저장되어 있습니다." : "키를 입력하면 바로 저장됩니다."}
           </p>
         </section>
@@ -161,11 +161,11 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-stone-100 text-2xl text-stone-700">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f8e9ee] text-2xl font-medium text-[#c45c78]">
               +
             </span>
-            <span className="mt-4 text-base font-medium">시트 사진 올리기</span>
-            <span className="mt-1 text-xs leading-relaxed text-stone-500">
+            <span className="mt-4 text-base font-semibold">시트 사진 올리기</span>
+            <span className="mt-1 text-xs leading-relaxed text-[#8a6f78]">
               올리면 바로 읽습니다. 사진은 저장되지 않아요.
             </span>
           </div>
@@ -205,7 +205,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
             setError(null);
             setShowSource(false);
           }}
-          className="rounded-full bg-white px-3 py-1.5 text-xs text-stone-500 ring-1 ring-stone-200"
+          className="rounded-full bg-white px-3.5 py-1.5 text-xs font-medium text-[#8a6f78] ring-1 ring-[#eedfe4]"
         >
           샘플로 미리보기
         </button>
@@ -224,8 +224,8 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
           <section className="card p-4">
             <div className="mb-3 flex items-end justify-between gap-3">
               <div>
-                <p className="text-xs text-stone-500">직접 입력</p>
-                <p className="font-[family-name:var(--font-display)] text-[26px] leading-none text-stone-900">
+                <p className="text-xs text-[#8a6f78]">직접 입력</p>
+                <p className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">
                   {customValid ? `${formatMultiplier(customMultiplier)}배수` : "배수"}
                 </p>
               </div>
@@ -234,7 +234,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
                 value={customRaw}
                 onChange={(e) => setCustomRaw(e.target.value)}
                 placeholder="예: 3"
-                className="w-24 rounded-2xl bg-stone-50 px-3 py-2 text-right text-lg tabular outline-none ring-1 ring-stone-200 focus:ring-stone-400"
+                className="w-24 rounded-2xl bg-[#fdf7f9] px-3 py-2 text-right text-lg tabular outline-none ring-1 ring-[#eedfe4] focus:ring-[#c45c78]"
               />
             </div>
             {customValid ? (
@@ -386,9 +386,9 @@ function MultiplierCard({ title, multiplier, sheet }: { title: string; multiplie
   return (
     <section className="card p-4">
       <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="font-[family-name:var(--font-display)] text-[26px] leading-none text-stone-900">{title}</h2>
+        <h2 className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">{title}</h2>
         {!Number.isInteger(multiplier) && (
-          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">반올림</span>
+          <span className="rounded-full bg-[#f8e9ee] px-2 py-0.5 text-[11px] font-medium text-[#c45c78]">반올림</span>
         )}
       </div>
       <ScaledTable sheet={sheet} multiplier={multiplier} />

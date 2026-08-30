@@ -1,17 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Noto_Sans_KR } from "next/font/google";
+import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
-
-const display = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-display",
-});
 
 const sans = Noto_Sans_KR({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
@@ -31,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f6f3ec",
+  themeColor: "#f8f2f4",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -40,7 +33,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body className={`${display.variable} ${sans.variable} antialiased`}>{children}</body>
+      <body className={`${sans.className} antialiased`}>{children}</body>
     </html>
   );
 }
