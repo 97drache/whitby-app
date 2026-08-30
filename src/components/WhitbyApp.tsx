@@ -179,7 +179,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
     <main className="relative mx-auto min-h-dvh max-w-[430px]">
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#eedfe4]/70 bg-[#f8f2f4]/90 px-4 pb-3 pt-[calc(14px+var(--safe-top))] backdrop-blur-md">
         <div className="flex min-w-0 items-center gap-3">
-          <img src="/icon-192.png" alt="" className="h-14 w-14 shrink-0 object-contain" />
+          <img src="/tulip.png" alt="" className="h-12 w-12 shrink-0 object-contain" />
           <p className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">Whitby</p>
         </div>
         <button
@@ -230,9 +230,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
-            <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-[#f8e9ee]">
-              <img src="/icon-192.png" alt="" className="h-14 w-14 object-contain" />
-            </span>
+            <img src="/tulip.png" alt="" className="h-16 w-16 object-contain" />
             <span className="mt-4 text-base font-semibold">시트 사진 올리기</span>
             <span className="mt-1 text-xs leading-relaxed text-[#8a6f78]">
               올리면 바로 읽습니다. 사진은 저장되지 않아요.
@@ -315,27 +313,25 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
 function CycleBanner({ sheet }: { sheet: ExtractedSheet }) {
   const percent = remainingPercent(sheet.cashUsd, sheet.startUsd);
   return (
-    <section className="card mb-4 overflow-hidden p-0">
-      <div className="px-4 pt-4">
-        <p className="text-sm font-semibold text-[#3a2a30]">
-          현사이클 {sheet.cycle != null ? `${formatQty(sheet.cycle)}차` : "—"}
-        </p>
-      </div>
-      <div className="mt-3 grid grid-cols-3 gap-px bg-[#eedfe4]">
-        <div className="bg-white px-3 py-3">
+    <section className="card mb-4 p-4">
+      <p className="text-sm font-semibold text-[#3a2a30]">
+        현사이클 {sheet.cycle != null ? `${formatQty(sheet.cycle)}차` : "—"}
+      </p>
+      <div className="mt-3 grid grid-cols-3">
+        <div>
           <p className="text-[11px] text-[#8a6f78]">시작 $</p>
           <p className="mt-1 text-[15px] font-semibold tabular text-[#3a2a30]">
             {sheet.startUsd != null ? formatUsd(sheet.startUsd) : "—"}
           </p>
         </div>
-        <div className="bg-white px-3 py-3">
+        <div>
           <p className="text-[11px] text-[#8a6f78]">잔금 $</p>
           <p className="mt-1 text-[15px] font-semibold tabular text-[#3a2a30]">
             {sheet.cashUsd != null ? formatUsd(sheet.cashUsd) : "—"}
           </p>
         </div>
-        <div className="bg-[#f8e9ee] px-3 py-3">
-          <p className="text-[11px] text-[#c45c78]">남은 비율</p>
+        <div>
+          <p className="text-[11px] text-[#8a6f78]">남은 비율</p>
           <p className="mt-1 text-[22px] font-semibold leading-none tabular text-[#c45c78]">
             {percent != null ? `${percent.toFixed(1)}%` : "—"}
           </p>
