@@ -16,6 +16,7 @@ import { NAMED_PRESETS, type ExtractedSheet, type Level } from "@/lib/types";
 
 const KEY_STORAGE = "whitby_gemini_key";
 const MULTIPLIER_STORAGE = "whitby_multipliers";
+const SHEET_STORAGE = "whitby_sheet";
 
 function readStoredKey(): string {
   try {
@@ -63,6 +64,26 @@ function writeStoredMultipliers(value: Record<string, number>) {
   }
 }
 
+function readStoredSheet(): ExtractedSheet | null {
+  try {
+    const raw = localStorage.getItem(SHEET_STORAGE);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ExtractedSheet;
+    if (!parsed || !Array.isArray(parsed.buys) || !Number.isFinite(parsed.holdings)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSheet(value: ExtractedSheet) {
+  try {
+    localStorage.setItem(SHEET_STORAGE, JSON.stringify(value));
+  } catch {
+    // Private browsing can block localStorage.
+  }
+}
+
 export default function WhitbyApp({ initialSheet = null }: { initialSheet?: ExtractedSheet | null }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<string | null>(null);
@@ -101,13 +122,21 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
     apiKeyRef.current = stored;
     setKeySaved(stored.length > 0);
     setMultipliers(readStoredMultipliers());
+    if (!initialSheet) {
+      const saved = readStoredSheet();
+      if (saved) setSheet(saved);
+    }
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
     return () => {
       if (previewRef.current) URL.revokeObjectURL(previewRef.current);
     };
-  }, []);
+  }, [initialSheet]);
+
+  useEffect(() => {
+    if (sheet) writeStoredSheet(sheet);
+  }, [sheet]);
 
   async function runParse(imageFile: File) {
     setBusy(true);
@@ -139,8 +168,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
     const url = URL.createObjectURL(next);
     previewRef.current = url;
     setPreview(url);
-    setSheet(null);
-    setModelUsed(null);
+    setError(null);
     await runParse(next);
   }
 
@@ -149,10 +177,9 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
 
   return (
     <main className="relative mx-auto min-h-dvh max-w-[430px]">
-      <TulipWatermark />
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#eedfe4]/70 bg-[#f8f2f4]/90 px-4 pb-3 pt-[calc(14px+var(--safe-top))] backdrop-blur-md">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <TulipMark />
+        <div className="flex min-w-0 items-center gap-3">
+          <img src="/icon-192.png" alt="" className="h-14 w-14 shrink-0 object-contain" />
           <p className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">Whitby</p>
         </div>
         <button
@@ -203,8 +230,8 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#f8e9ee]">
-              <TulipMark size={36} />
+            <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-[#f8e9ee]">
+              <img src="/icon-192.png" alt="" className="h-14 w-14 object-contain" />
             </span>
             <span className="mt-4 text-base font-semibold">시트 사진 올리기</span>
             <span className="mt-1 text-xs leading-relaxed text-[#8a6f78]">
@@ -285,61 +312,35 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
   );
 }
 
-function TulipMark({ size = 28 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" aria-hidden className="shrink-0">
-      <path d="M24 44V22" stroke="#6B9A6A" strokeWidth="2.4" strokeLinecap="round" />
-      <path d="M24 36c-6 1.5-10 6-11 11" stroke="#6B9A6A" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M24 34c5 2 9 7 10 12" stroke="#6B9A6A" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M24 8c-7 6-11 13-8 18 4 6 8 6 8 6s4 0 8-6c3-5-1-12-8-18Z" fill="#D46A86" />
-      <path d="M24 8c-2 8-1 16 0 22" stroke="#F3C3D0" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function TulipWatermark() {
-  return (
-    <svg
-      className="pointer-events-none absolute -right-8 top-16 h-56 w-56 opacity-[0.11]"
-      viewBox="0 0 48 48"
-      fill="none"
-      aria-hidden
-    >
-      <path d="M24 44V22" stroke="#C45C78" strokeWidth="2.4" strokeLinecap="round" />
-      <path d="M24 36c-6 1.5-10 6-11 11" stroke="#C45C78" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M24 34c5 2 9 7 10 12" stroke="#C45C78" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M24 8c-7 6-11 13-8 18 4 6 8 6 8 6s4 0 8-6c3-5-1-12-8-18Z" fill="#C45C78" />
-    </svg>
-  );
-}
-
 function CycleBanner({ sheet }: { sheet: ExtractedSheet }) {
   const percent = remainingPercent(sheet.cashUsd, sheet.startUsd);
   return (
-    <section className="card mb-4 p-4">
-      <div className="flex items-baseline justify-between gap-3">
+    <section className="card mb-4 overflow-hidden p-0">
+      <div className="px-4 pt-4">
         <p className="text-sm font-semibold text-[#3a2a30]">
           현사이클 {sheet.cycle != null ? `${formatQty(sheet.cycle)}차` : "—"}
         </p>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[#8a6f78]">
-        <div className="rounded-2xl bg-[#fdf7f9] px-3 py-2">
-          <p>시작 $</p>
-          <p className="mt-0.5 text-[15px] font-medium tabular text-[#3a2a30]">
+      <div className="mt-3 grid grid-cols-3 gap-px bg-[#eedfe4]">
+        <div className="bg-white px-3 py-3">
+          <p className="text-[11px] text-[#8a6f78]">시작 $</p>
+          <p className="mt-1 text-[15px] font-semibold tabular text-[#3a2a30]">
             {sheet.startUsd != null ? formatUsd(sheet.startUsd) : "—"}
           </p>
         </div>
-        <div className="rounded-2xl bg-[#fdf7f9] px-3 py-2">
-          <p>잔금 $</p>
-          <p className="mt-0.5 text-[15px] font-medium tabular text-[#3a2a30]">
+        <div className="bg-white px-3 py-3">
+          <p className="text-[11px] text-[#8a6f78]">잔금 $</p>
+          <p className="mt-1 text-[15px] font-semibold tabular text-[#3a2a30]">
             {sheet.cashUsd != null ? formatUsd(sheet.cashUsd) : "—"}
           </p>
         </div>
+        <div className="bg-[#f8e9ee] px-3 py-3">
+          <p className="text-[11px] text-[#c45c78]">남은 비율</p>
+          <p className="mt-1 text-[22px] font-semibold leading-none tabular text-[#c45c78]">
+            {percent != null ? `${percent.toFixed(1)}%` : "—"}
+          </p>
+        </div>
       </div>
-      <p className="mt-3 text-[32px] font-semibold leading-none tabular text-[#c45c78]">
-        {percent != null ? `${percent.toFixed(1)}%` : "—"}
-        <span className="ml-1 text-sm font-medium text-[#8a6f78]">남음</span>
-      </p>
     </section>
   );
 }
