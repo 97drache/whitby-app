@@ -13,9 +13,28 @@ import { PRESET_MULTIPLIERS, SAMPLE_SHEET, type ExtractedSheet, type Level } fro
 
 const KEY_STORAGE = "whitby_gemini_key";
 
+function readStoredKey(): string {
+  try {
+    return (localStorage.getItem(KEY_STORAGE) || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function writeStoredKey(value: string) {
+  try {
+    const trimmed = value.trim();
+    if (trimmed) localStorage.setItem(KEY_STORAGE, trimmed);
+    else localStorage.removeItem(KEY_STORAGE);
+  } catch {
+    // Private browsing can block localStorage.
+  }
+}
+
 export default function WhitbyApp({ initialSheet = null }: { initialSheet?: ExtractedSheet | null }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<string | null>(null);
+  const apiKeyRef = useRef("");
   const [preview, setPreview] = useState<string | null>(null);
   const [sheet, setSheet] = useState<ExtractedSheet | null>(initialSheet);
   const [busy, setBusy] = useState(false);
@@ -23,12 +42,23 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
   const [modelUsed, setModelUsed] = useState<string | null>(initialSheet ? "sample" : null);
   const [customRaw, setCustomRaw] = useState("");
   const [apiKey, setApiKey] = useState("");
+  const [keySaved, setKeySaved] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [showSource, setShowSource] = useState(false);
   const [sheetKey, setSheetKey] = useState(0);
 
+  function rememberKey(value: string) {
+    setApiKey(value);
+    apiKeyRef.current = value.trim();
+    writeStoredKey(value);
+    setKeySaved(value.trim().length > 0);
+  }
+
   useEffect(() => {
-    setApiKey(localStorage.getItem(KEY_STORAGE) || "");
+    const stored = readStoredKey();
+    setApiKey(stored);
+    apiKeyRef.current = stored;
+    setKeySaved(stored.length > 0);
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
@@ -44,8 +74,9 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
       const blob = await compressImage(imageFile);
       const form = new FormData();
       form.append("image", blob, "sheet.jpg");
+      const key = apiKeyRef.current.trim() || readStoredKey();
       const headers: HeadersInit = {};
-      if (apiKey.trim()) headers["x-gemini-key"] = apiKey.trim();
+      if (key) headers["x-gemini-key"] = key;
       const res = await fetch("/api/parse", { method: "POST", body: form, headers });
       const data = (await res.json()) as { sheet?: ExtractedSheet; model?: string; error?: string };
       if (!res.ok || !data.sheet) throw new Error(data.error || "추출에 실패했습니다.");
@@ -53,7 +84,6 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
       setSheetKey((n) => n + 1);
       setShowSource(false);
       setModelUsed(data.model || null);
-      if (apiKey.trim()) localStorage.setItem(KEY_STORAGE, apiKey.trim());
     } catch (err) {
       setError(err instanceof Error ? err.message : "추출에 실패했습니다.");
     } finally {
@@ -92,7 +122,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
           onClick={() => setShowKey((v) => !v)}
           className="rounded-full bg-white px-3 py-1.5 text-xs text-stone-500 ring-1 ring-stone-200"
         >
-          {showKey ? "닫기" : "설정"}
+          {showKey ? "닫기" : keySaved ? "설정 · 저장됨" : "설정"}
         </button>
       </header>
 
@@ -100,15 +130,19 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
         <section className="card mb-4 p-4">
           <p className="text-sm font-medium">Gemini API 키</p>
           <p className="mt-1 text-xs leading-relaxed text-stone-500">
-            사진은 기기에만 잠시 쓰이고 서버에 저장하지 않습니다. 배포 환경에는 Vercel 환경 변수로 넣어도 됩니다.
+            이 폰에만 저장되며 한 번 넣으면 다시 묻지 않습니다. 사진은 서버에 남기지 않습니다.
           </p>
           <input
             type="password"
+            autoComplete="off"
             value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
+            onChange={(e) => rememberKey(e.target.value)}
             placeholder="AIza..."
             className="mt-3 w-full rounded-2xl bg-stone-50 px-3 py-2.5 text-sm outline-none ring-1 ring-stone-200 focus:ring-stone-400"
           />
+          <p className={`mt-2 text-xs ${keySaved ? "text-emerald-700" : "text-stone-400"}`}>
+            {keySaved ? "이 기기에 저장되어 있습니다." : "키를 입력하면 바로 저장됩니다."}
+          </p>
         </section>
       )}
 
