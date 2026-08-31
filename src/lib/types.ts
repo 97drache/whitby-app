@@ -8,6 +8,7 @@ export type ExtractedSheet = {
   sells: Level[];
   holdings: number;
   avgCost: number | null;
+  closePrice: number | null;
   closeDate: string | null;
   cycle: number | null;
   startUsd: number | null;
@@ -32,6 +33,7 @@ export const SAMPLE_SHEET: ExtractedSheet = {
   ],
   holdings: 48,
   avgCost: 115.4,
+  closePrice: 114.2,
   closeDate: "2026-08-28",
   cycle: 29,
   startUsd: 14467.67,

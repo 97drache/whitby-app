@@ -14,6 +14,8 @@ There are TWO separate "Limit Vwap" blocks:
 
 "보유평단" or "평단" is the average cost of current holdings. A dollar-like number near the holdings block. Do not confuse it with 종가, 매수가, 시작 $, or 잔금 $.
 
+"종가" is the last close PRICE (a dollar-like number, not a date). Do not confuse it with 종가 날짜, 보유평단, 매수가, or 매도가.
+
 The sheet also shows a market CLOSE DATE (종가 날짜 / 종가일 / 기준일, or a date next to 종가). This is the date of the session that already closed, NOT the next trading day. Return it as ISO YYYY-MM-DD. If only month and day are shown, infer the year (usually the current year, or the most recent past date).
 
 On the RIGHT of the LOWER/middle block:
@@ -27,6 +29,7 @@ Return ONLY JSON with this shape:
   "sells": [{"price": number, "qty": number}],
   "holdings": number,
   "avgCost": number,
+  "closePrice": number,
   "closeDate": "YYYY-MM-DD",
   "cycle": number,
   "startUsd": number,
@@ -39,6 +42,7 @@ Rules:
 - Do not invent rows. Omit empty rows.
 - holdings must be the 현재 보유 개수 integer.
 - avgCost is 보유평단 / 평단.
+- closePrice is 종가 (the close price number, not the date).
 - closeDate is the 종가 date as YYYY-MM-DD.
 - cycle must be the 현사이클 차수 integer (strip 차).
 - startUsd is 현사이클 시작 $.
@@ -97,6 +101,7 @@ function parseSheet(raw: unknown): ExtractedSheet {
     sells,
     holdings,
     avgCost: asMoney(data.avgCost ?? data.avgPrice),
+    closePrice: asMoney(data.closePrice ?? data.close),
     closeDate: asDate(data.closeDate),
     cycle: asMoney(data.cycle),
     startUsd: asMoney(data.startUsd),

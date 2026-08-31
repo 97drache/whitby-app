@@ -318,7 +318,13 @@ function CycleBanner({ sheet }: { sheet: ExtractedSheet }) {
     <section className="card mb-4 p-4">
       <p className="text-[11px] text-[#8a6f78]">거래일</p>
       <p className="mt-0.5 text-sm font-semibold text-[#3a2a30]">{formatTradeDate(tradeDate)}</p>
-      <div className="mt-3 grid grid-cols-2">
+      <div className="mt-3 grid grid-cols-3 text-center">
+        <div>
+          <p className="text-[11px] text-[#8a6f78]">종가</p>
+          <p className="mt-1 text-[15px] font-semibold tabular text-[#3a2a30]">
+            {sheet.closePrice != null ? formatPrice(sheet.closePrice) : "—"}
+          </p>
+        </div>
         <div>
           <p className="text-[11px] text-[#8a6f78]">보유평단</p>
           <p className="mt-1 text-[15px] font-semibold tabular text-[#3a2a30]">
@@ -330,7 +336,7 @@ function CycleBanner({ sheet }: { sheet: ExtractedSheet }) {
           <p className="mt-1 text-[15px] font-semibold tabular text-[#3a2a30]">{formatQty(sheet.holdings)}</p>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-3">
+      <div className="mt-3 grid grid-cols-3 text-center">
         <div>
           <p className="text-[11px] text-[#8a6f78]">시작 $</p>
           <p className="mt-1 text-[15px] font-semibold tabular text-[#3a2a30]">
@@ -345,7 +351,7 @@ function CycleBanner({ sheet }: { sheet: ExtractedSheet }) {
         </div>
         <div>
           <p className="text-[11px] text-[#8a6f78]">남은 비율</p>
-          <p className="mt-1 text-[22px] font-semibold leading-none tabular text-[#c45c78]">
+          <p className="mt-1 text-[15px] font-semibold tabular text-[#c45c78]">
             {percent != null ? `${percent.toFixed(1)}%` : "—"}
           </p>
         </div>
@@ -422,6 +428,17 @@ function ExtractedEditor({
           />
         </label>
         <label className="text-xs text-[#8a6f78]">
+          종가
+          <NumberField
+            value={sheet.closePrice ?? 0}
+            inputMode="decimal"
+            className="mt-1 w-full rounded-2xl bg-[#fdf7f9] px-2 py-2 text-sm tabular outline-none"
+            onChange={(closePrice) => onChange({ ...sheet, closePrice })}
+          />
+        </label>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="text-xs text-[#8a6f78]">
           보유평단
           <NumberField
             value={sheet.avgCost ?? 0}
@@ -430,8 +447,6 @@ function ExtractedEditor({
             onChange={(avgCost) => onChange({ ...sheet, avgCost })}
           />
         </label>
-      </div>
-      <div className="grid grid-cols-3 gap-2">
         <label className="text-xs text-[#8a6f78]">
           보유 개수
           <NumberField
@@ -441,6 +456,8 @@ function ExtractedEditor({
             onChange={(holdings) => onChange({ ...sheet, holdings })}
           />
         </label>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
         <label className="text-xs text-[#8a6f78]">
           시작 $
           <NumberField
@@ -605,8 +622,9 @@ function ScaledTable({ sheet, multiplier }: { sheet: ExtractedSheet; multiplier:
     <div className="space-y-3">
       <div className="flex items-center justify-between px-1 py-1">
         <span className="text-[11px] text-[#8a6f78]">보유 개수</span>
-        <span className="text-sm tabular font-medium text-[#3a2a30]">{formatQty(holdings)}</span>
+        <span className="text-[20px] leading-none tabular font-semibold text-[#3a2a30]">{formatQty(holdings)}</span>
       </div>
+      <p className="px-1 text-[16px] font-bold text-[#3a2a30]">Limit VWAP: 일반예약 + 장마감 30분전</p>
       <LevelTable caption="매수" tone="buy" rows={buys} />
       {sells.length > 0 && <LevelTable caption="매도" tone="sell" rows={sells} />}
     </div>
@@ -624,8 +642,8 @@ function LevelTable({ caption, tone, rows }: { caption: string; tone: "buy" | "s
       <ul className="space-y-1.5">
         {rows.map((row, i) => (
           <li key={`${caption}-${i}-${row.price}`} className="flex items-center justify-between rounded-2xl bg-[#fdf7f9] px-4 py-2.5">
-            <span className="text-[15px] tabular text-[#3a2a30]">{formatPrice(row.price)}</span>
-            <span className={`text-[28px] leading-none tabular font-semibold ${qtyClass}`}>{formatQty(row.qty)}</span>
+            <span className="text-[18px] tabular font-medium text-black">{formatPrice(row.price)}</span>
+            <span className={`text-[20px] leading-none tabular font-semibold ${qtyClass}`}>{formatQty(row.qty)}</span>
           </li>
         ))}
       </ul>
