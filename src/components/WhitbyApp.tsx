@@ -557,7 +557,9 @@ function MultiplierCard({
         )}
       </div>
       {!Number.isInteger(multiplier) && (
-        <p className="mb-3 text-[11px] font-medium text-[#c45c78]">개수는 반올림합니다.</p>
+        <p className="mb-3 text-[11px] font-medium text-[#c45c78]">
+          .5배수는 보유·매수를 누적해 반올림하고, 매도는 낮은가부터 계산합니다.
+        </p>
       )}
       <ScaledTable sheet={sheet} multiplier={multiplier} />
     </section>
@@ -565,9 +567,15 @@ function MultiplierCard({
 }
 
 function ScaledTable({ sheet, multiplier }: { sheet: ExtractedSheet; multiplier: number }) {
-  const buys = useMemo(() => scaleLevels(sheet.buys, multiplier), [sheet.buys, multiplier]);
-  const sells = useMemo(() => scaleLevels(sheet.sells, multiplier), [sheet.sells, multiplier]);
   const holdings = scaleQty(sheet.holdings, multiplier);
+  const buys = useMemo(
+    () => scaleLevels(sheet.buys, multiplier, sheet.holdings, "desc"),
+    [sheet.buys, multiplier, sheet.holdings],
+  );
+  const sells = useMemo(
+    () => scaleLevels(sheet.sells, multiplier, 0, "asc"),
+    [sheet.sells, multiplier],
+  );
 
   return (
     <div className="space-y-3">
