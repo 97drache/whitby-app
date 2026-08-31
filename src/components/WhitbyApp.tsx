@@ -181,7 +181,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
     <main className="relative mx-auto min-h-dvh max-w-[430px]">
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#eedfe4]/70 bg-[#f8f2f4]/90 px-4 pb-3 pt-[calc(14px+var(--safe-top))] backdrop-blur-md">
         <div className="flex min-w-0 items-center gap-3">
-          <img src="/tulip.png" alt="" className="h-24 w-auto shrink-0 object-contain" />
+          <img src="/tulip.png" alt="" className="h-20 w-auto shrink-0 object-contain" />
           <p className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">WHITBY</p>
         </div>
         <button
@@ -231,10 +231,9 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
-            <img src="/tulip.png" alt="" className="h-36 w-auto object-contain" />
-            <span className="mt-4 text-base font-semibold">시트 사진 올리기</span>
-            <span className="mt-1 text-xs leading-relaxed text-[#8a6f78]">
+          <div className="px-4 py-5 text-center">
+            <span className="text-sm font-semibold">시트 사진 올리기</span>
+            <span className="mt-1 block text-xs leading-relaxed text-[#8a6f78]">
               올리면 바로 읽습니다. 사진은 저장되지 않아요.
             </span>
           </div>
@@ -620,15 +619,17 @@ function ScaledTable({ sheet, multiplier }: { sheet: ExtractedSheet; multiplier:
   );
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between px-1 py-1">
-        <span className="text-[11px] text-[#8a6f78]">보유 개수</span>
-        <span className="text-[20px] leading-none tabular font-semibold text-[#3a2a30]">{formatQty(holdings)}</span>
+    <div>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1 py-1">
+          <span className="text-[11px] text-[#8a6f78]">보유 개수</span>
+          <span className="text-[20px] leading-none tabular font-semibold text-[#3a2a30]">{formatQty(holdings)}</span>
+        </div>
+        <p className="px-1 text-center text-[13px] font-normal text-[#3a2a30]">Limit VWAP: 일반예약 + 장마감 30분전</p>
+        <LevelTable caption="매수" tone="buy" rows={buys} />
+        {sells.length > 0 && <LevelTable caption="매도" tone="sell" rows={sells} />}
       </div>
-      <p className="px-1 text-center text-[13px] font-normal text-[#3a2a30]">Limit VWAP: 일반예약 + 장마감 30분전</p>
-      <LevelTable caption="매수" tone="buy" rows={buys} />
-      {sells.length > 0 && <LevelTable caption="매도" tone="sell" rows={sells} />}
-      <p className="mt-1 text-sm font-semibold tabular text-[#c45c78]">
+      <p className="mt-5 text-sm font-semibold tabular text-[#c45c78]">
         매수금 ${formatUsd(buyNotional(buys))}
       </p>
     </div>
