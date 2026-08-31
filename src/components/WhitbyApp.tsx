@@ -9,6 +9,7 @@ import {
   formatUsd,
   remainingPercent,
   scaleLevels,
+  scaleSellLevels,
   scaleQty,
   scaleUsd,
   buyNotional,
@@ -614,7 +615,7 @@ function ScaledTable({ sheet, multiplier }: { sheet: ExtractedSheet; multiplier:
     [sheet.buys, multiplier, sheet.holdings],
   );
   const sells = useMemo(
-    () => scaleLevels(sheet.sells, multiplier, 0, "asc"),
+    () => scaleSellLevels(sheet.sells, multiplier),
     [sheet.sells, multiplier],
   );
 

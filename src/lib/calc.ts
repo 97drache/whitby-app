@@ -57,6 +57,40 @@ export function scaleLevels(
   }));
 }
 
+/**
+ * .5 sell multipliers: fill lowest price first.
+ * Lowest qty is fixed first so roundHalfUp(low * m) matches that row,
+ * then each higher row is the remainder to roundHalfUp(running sum * m).
+ * Does not use holdings. Buy scaling stays in scaleLevels.
+ */
+export function scaleSellLevels(levels: Level[], multiplier: number): Level[] {
+  if (!isHalfMultiplier(multiplier) || !levels.length) {
+    return levels.map((level) => ({
+      price: level.price,
+      qty: scaleQty(level.qty, multiplier),
+    }));
+  }
+
+  const ranked = levels.map((level, index) => ({ ...level, index }));
+  ranked.sort((a, b) => a.price - b.price);
+
+  let cumQty = 0;
+  let cumScaled = 0;
+  const scaled = new Array<number>(levels.length);
+
+  for (const row of ranked) {
+    cumQty += row.qty;
+    const target = roundHalfUp(cumQty * multiplier);
+    scaled[row.index] = target - cumScaled;
+    cumScaled = target;
+  }
+
+  return levels.map((level, index) => ({
+    price: level.price,
+    qty: scaled[index],
+  }));
+}
+
 export function formatPrice(value: number): string {
   if (!Number.isFinite(value)) return "—";
   return value.toLocaleString("en-US", {
