@@ -94,3 +94,7 @@ export function scaleUsd(value: number | null, multiplier: number): number | nul
   if (value == null || !Number.isFinite(value) || !Number.isFinite(multiplier)) return null;
   return Math.round(value * multiplier * 100) / 100;
 }
+
+export function buyNotional(levels: Level[]): number {
+  return levels.reduce((sum, row) => sum + row.price * row.qty, 0);
+}

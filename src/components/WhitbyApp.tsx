@@ -11,6 +11,7 @@ import {
   scaleLevels,
   scaleQty,
   scaleUsd,
+  buyNotional,
 } from "@/lib/calc";
 import { formatTradeDate, nextUsTradingDay } from "@/lib/market";
 import { NAMED_PRESETS, type ExtractedSheet, type Level } from "@/lib/types";
@@ -624,9 +625,12 @@ function ScaledTable({ sheet, multiplier }: { sheet: ExtractedSheet; multiplier:
         <span className="text-[11px] text-[#8a6f78]">보유 개수</span>
         <span className="text-[20px] leading-none tabular font-semibold text-[#3a2a30]">{formatQty(holdings)}</span>
       </div>
-      <p className="px-1 text-[16px] font-bold text-[#3a2a30]">Limit VWAP: 일반예약 + 장마감 30분전</p>
+      <p className="px-1 text-center text-[13px] font-normal text-[#3a2a30]">Limit VWAP: 일반예약 + 장마감 30분전</p>
       <LevelTable caption="매수" tone="buy" rows={buys} />
       {sells.length > 0 && <LevelTable caption="매도" tone="sell" rows={sells} />}
+      <p className="mt-1 text-sm font-semibold tabular text-[#c45c78]">
+        매수금 ${formatUsd(buyNotional(buys))}
+      </p>
     </div>
   );
 }
