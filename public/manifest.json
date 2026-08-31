@@ -1,6 +1,6 @@
 {
-  "name": "Whitby",
-  "short_name": "Whitby",
+  "name": "WHITBY",
+  "short_name": "WHITBY",
   "description": "Limit VWAP 배수 계산",
   "start_url": "/",
   "display": "standalone",

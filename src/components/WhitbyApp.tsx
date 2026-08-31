@@ -12,6 +12,7 @@ import {
   scaleQty,
   scaleUsd,
 } from "@/lib/calc";
+import { formatTradeDate, nextUsTradingDay } from "@/lib/market";
 import { NAMED_PRESETS, type ExtractedSheet, type Level } from "@/lib/types";
 
 const KEY_STORAGE = "whitby_gemini_key";
@@ -180,7 +181,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#eedfe4]/70 bg-[#f8f2f4]/90 px-4 pb-3 pt-[calc(14px+var(--safe-top))] backdrop-blur-md">
         <div className="flex min-w-0 items-center gap-3">
           <img src="/tulip.png" alt="" className="h-24 w-auto shrink-0 object-contain" />
-          <p className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">Whitby</p>
+          <p className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">WHITBY</p>
         </div>
         <button
           type="button"
@@ -251,7 +252,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
       />
 
       {busy && (
-        <div className="card mb-3 px-4 py-3 text-sm text-[#8a6f78]">매수 · 매도 · 보유 · 사이클을 읽고 있습니다…</div>
+        <div className="card mb-3 px-4 py-3 text-sm text-[#8a6f78]">매수 · 매도 · 보유 · 종가일을 읽고 있습니다…</div>
       )}
 
       {error && (
@@ -312,11 +313,23 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
 
 function CycleBanner({ sheet }: { sheet: ExtractedSheet }) {
   const percent = remainingPercent(sheet.cashUsd, sheet.startUsd);
+  const tradeDate = nextUsTradingDay(sheet.closeDate);
   return (
     <section className="card mb-4 p-4">
-      <p className="text-sm font-semibold text-[#3a2a30]">
-        현사이클 {sheet.cycle != null ? `${formatQty(sheet.cycle)}차` : "—"}
-      </p>
+      <p className="text-[11px] text-[#8a6f78]">거래일</p>
+      <p className="mt-0.5 text-sm font-semibold text-[#3a2a30]">{formatTradeDate(tradeDate)}</p>
+      <div className="mt-3 grid grid-cols-2">
+        <div>
+          <p className="text-[11px] text-[#8a6f78]">보유평단</p>
+          <p className="mt-1 text-[15px] font-semibold tabular text-[#3a2a30]">
+            {sheet.avgCost != null ? formatPrice(sheet.avgCost) : "—"}
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] text-[#8a6f78]">보유 개수</p>
+          <p className="mt-1 text-[15px] font-semibold tabular text-[#3a2a30]">{formatQty(sheet.holdings)}</p>
+        </div>
+      </div>
       <div className="mt-3 grid grid-cols-3">
         <div>
           <p className="text-[11px] text-[#8a6f78]">시작 $</p>
@@ -398,14 +411,34 @@ function ExtractedEditor({
           <span className="rounded-full bg-[#fdf7f9] px-2 py-0.5 text-[10px] text-[#8a6f78]">{modelUsed}</span>
         )}
       </div>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="text-xs text-[#8a6f78]">
+          종가 날짜
+          <input
+            type="date"
+            value={sheet.closeDate ?? ""}
+            onChange={(e) => onChange({ ...sheet, closeDate: e.target.value || null })}
+            className="mt-1 w-full rounded-2xl bg-[#fdf7f9] px-2 py-2 text-sm tabular outline-none"
+          />
+        </label>
+        <label className="text-xs text-[#8a6f78]">
+          보유평단
+          <NumberField
+            value={sheet.avgCost ?? 0}
+            inputMode="decimal"
+            className="mt-1 w-full rounded-2xl bg-[#fdf7f9] px-2 py-2 text-sm tabular outline-none"
+            onChange={(avgCost) => onChange({ ...sheet, avgCost })}
+          />
+        </label>
+      </div>
       <div className="grid grid-cols-3 gap-2">
         <label className="text-xs text-[#8a6f78]">
-          차수
+          보유 개수
           <NumberField
-            value={sheet.cycle ?? 0}
+            value={sheet.holdings}
             inputMode="numeric"
             className="mt-1 w-full rounded-2xl bg-[#fdf7f9] px-2 py-2 text-sm tabular outline-none"
-            onChange={(cycle) => onChange({ ...sheet, cycle })}
+            onChange={(holdings) => onChange({ ...sheet, holdings })}
           />
         </label>
         <label className="text-xs text-[#8a6f78]">
@@ -426,15 +459,6 @@ function ExtractedEditor({
             onChange={(cashUsd) => onChange({ ...sheet, cashUsd })}
           />
         </label>
-      </div>
-      <div>
-        <p className="mb-2 text-xs text-[#8a6f78]">현재 보유 개수</p>
-        <NumberField
-          value={sheet.holdings}
-          inputMode="numeric"
-          className="w-full rounded-2xl bg-[#fdf7f9] px-3 py-2 text-lg tabular text-[#3a2a30] outline-none"
-          onChange={(holdings) => onChange({ ...sheet, holdings })}
-        />
       </div>
       <LevelEditor label="매수 Limit VWAP" tone="buy" levels={sheet.buys} onChange={(buys) => onChange({ ...sheet, buys })} />
       <LevelEditor label="매도 Limit VWAP" tone="sell" levels={sheet.sells} onChange={(sells) => onChange({ ...sheet, sells })} />

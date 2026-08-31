@@ -8,14 +8,14 @@ const sans = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: "Whitby",
+  title: "WHITBY",
   description: "Limit VWAP 시트를 읽어 배수 주문을 계산합니다.",
-  applicationName: "Whitby",
+  applicationName: "WHITBY",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Whitby",
+    title: "WHITBY",
   },
   icons: {
     icon: "/icon-192.png",

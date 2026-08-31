@@ -12,6 +12,10 @@ There are TWO separate "Limit Vwap" blocks:
 
 "현재 보유 개수" is a single number on the RIGHT of the UPPER block, often on a light green background. Do not confuse it with 직전 매매 개수, 잔금, 종가, or 평단.
 
+"보유평단" or "평단" is the average cost of current holdings. A dollar-like number near the holdings block. Do not confuse it with 종가, 매수가, 시작 $, or 잔금 $.
+
+The sheet also shows a market CLOSE DATE (종가 날짜 / 종가일 / 기준일, or a date next to 종가). This is the date of the session that already closed, NOT the next trading day. Return it as ISO YYYY-MM-DD. If only month and day are shown, infer the year (usually the current year, or the most recent past date).
+
 On the RIGHT of the LOWER/middle block:
 - "현사이클 차수" is a cycle number, often like 29차. Return just the integer.
 - "현사이클 시작 $" is a dollar amount (may include commas).
@@ -22,6 +26,8 @@ Return ONLY JSON with this shape:
   "buys": [{"price": number, "qty": number}],
   "sells": [{"price": number, "qty": number}],
   "holdings": number,
+  "avgCost": number,
+  "closeDate": "YYYY-MM-DD",
   "cycle": number,
   "startUsd": number,
   "cashUsd": number
@@ -32,6 +38,8 @@ Rules:
 - Use dots as decimal separators. Strip thousands commas.
 - Do not invent rows. Omit empty rows.
 - holdings must be the 현재 보유 개수 integer.
+- avgCost is 보유평단 / 평단.
+- closeDate is the 종가 date as YYYY-MM-DD.
 - cycle must be the 현사이클 차수 integer (strip 차).
 - startUsd is 현사이클 시작 $.
 - cashUsd is 잔금 $.`;
@@ -58,6 +66,18 @@ function asMoney(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function asDate(value: unknown): string | null {
+  if (value == null || value === "") return null;
+  const raw = String(value).trim();
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dotted = raw.match(/^(\d{4})[./](\d{1,2})[./](\d{1,2})/);
+  if (dotted) {
+    return `${dotted[1]}-${dotted[2].padStart(2, "0")}-${dotted[3].padStart(2, "0")}`;
+  }
+  return null;
+}
+
 function parseSheet(raw: unknown): ExtractedSheet {
   if (!raw || typeof raw !== "object") {
     throw new Error("시트 형식을 읽지 못했습니다.");
@@ -76,6 +96,8 @@ function parseSheet(raw: unknown): ExtractedSheet {
     buys,
     sells,
     holdings,
+    avgCost: asMoney(data.avgCost ?? data.avgPrice),
+    closeDate: asDate(data.closeDate),
     cycle: asMoney(data.cycle),
     startUsd: asMoney(data.startUsd),
     cashUsd: asMoney(data.cashUsd),
