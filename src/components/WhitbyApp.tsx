@@ -179,7 +179,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
     <main className="relative mx-auto min-h-dvh max-w-[430px]">
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#eedfe4]/70 bg-[#f8f2f4]/90 px-4 pb-3 pt-[calc(14px+var(--safe-top))] backdrop-blur-md">
         <div className="flex min-w-0 items-center gap-3">
-          <img src="/tulip.png" alt="" className="h-12 w-12 shrink-0 object-contain" />
+          <img src="/tulip.png" alt="" className="h-24 w-auto shrink-0 object-contain" />
           <p className="text-[22px] font-semibold tracking-tight text-[#3a2a30]">Whitby</p>
         </div>
         <button
@@ -230,7 +230,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
-            <img src="/tulip.png" alt="" className="h-16 w-16 object-contain" />
+            <img src="/tulip.png" alt="" className="h-36 w-auto object-contain" />
             <span className="mt-4 text-base font-semibold">시트 사진 올리기</span>
             <span className="mt-1 text-xs leading-relaxed text-[#8a6f78]">
               올리면 바로 읽습니다. 사진은 저장되지 않아요.
@@ -432,7 +432,7 @@ function ExtractedEditor({
         <NumberField
           value={sheet.holdings}
           inputMode="numeric"
-          className="w-full rounded-2xl bg-emerald-50 px-3 py-3 text-3xl tabular text-emerald-700 outline-none"
+          className="w-full rounded-2xl bg-[#fdf7f9] px-3 py-2 text-lg tabular text-[#3a2a30] outline-none"
           onChange={(holdings) => onChange({ ...sheet, holdings })}
         />
       </div>
@@ -453,7 +453,7 @@ function LevelEditor({
   levels: Level[];
   onChange: (next: Level[]) => void;
 }) {
-  const accent = tone === "buy" ? "text-emerald-700" : "text-rose-600";
+  const accent = tone === "buy" ? "text-[#dc2626]" : "text-[#2563eb]";
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
@@ -483,7 +483,7 @@ function LevelEditor({
             <NumberField
               value={level.qty}
               inputMode="numeric"
-              className="rounded-2xl bg-[#fdf7f9] px-3 py-2 text-sm tabular outline-none ring-1 ring-[#eedfe4]"
+              className={`rounded-2xl bg-[#fdf7f9] px-3 py-2 text-lg tabular outline-none ring-1 ring-[#eedfe4] ${accent}`}
               onChange={(qty) => {
                 const next = [...levels];
                 next[i] = { ...level, qty };
@@ -579,9 +579,9 @@ function ScaledTable({ sheet, multiplier }: { sheet: ExtractedSheet; multiplier:
 
   return (
     <div className="space-y-3">
-      <div className="flex items-end justify-between rounded-2xl bg-emerald-50 px-4 py-3">
-        <span className="text-xs text-emerald-800/70">보유 개수</span>
-        <span className="text-2xl tabular font-semibold text-emerald-700">{formatQty(holdings)}</span>
+      <div className="flex items-center justify-between px-1 py-1">
+        <span className="text-[11px] text-[#8a6f78]">보유 개수</span>
+        <span className="text-sm tabular font-medium text-[#3a2a30]">{formatQty(holdings)}</span>
       </div>
       <LevelTable caption="매수" tone="buy" rows={buys} />
       {sells.length > 0 && <LevelTable caption="매도" tone="sell" rows={sells} />}
@@ -590,7 +590,7 @@ function ScaledTable({ sheet, multiplier }: { sheet: ExtractedSheet; multiplier:
 }
 
 function LevelTable({ caption, tone, rows }: { caption: string; tone: "buy" | "sell"; rows: Level[] }) {
-  const qtyClass = tone === "buy" ? "text-emerald-700" : "text-rose-600";
+  const qtyClass = tone === "buy" ? "text-[#dc2626]" : "text-[#2563eb]";
   return (
     <div>
       <div className="mb-1.5 grid grid-cols-2 px-1 text-[11px] text-[#8a6f78]">
@@ -599,9 +599,9 @@ function LevelTable({ caption, tone, rows }: { caption: string; tone: "buy" | "s
       </div>
       <ul className="space-y-1.5">
         {rows.map((row, i) => (
-          <li key={`${caption}-${i}-${row.price}`} className="grid grid-cols-2 rounded-2xl bg-[#fdf7f9] px-4 py-2.5 text-[17px] tabular">
-            <span className="text-[#3a2a30]">{formatPrice(row.price)}</span>
-            <span className={`text-right font-semibold ${qtyClass}`}>{formatQty(row.qty)}</span>
+          <li key={`${caption}-${i}-${row.price}`} className="flex items-center justify-between rounded-2xl bg-[#fdf7f9] px-4 py-2.5">
+            <span className="text-[15px] tabular text-[#3a2a30]">{formatPrice(row.price)}</span>
+            <span className={`text-[28px] leading-none tabular font-semibold ${qtyClass}`}>{formatQty(row.qty)}</span>
           </li>
         ))}
       </ul>

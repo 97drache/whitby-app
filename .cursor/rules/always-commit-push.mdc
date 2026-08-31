@@ -1,0 +1,8 @@
+---
+description: Always commit and push finished work to origin/main
+alwaysApply: true
+---
+
+# Always commit and push
+
+When work on this project is finished, create a git commit and push to `origin/main` without waiting to be asked. Use the portable MinGit at `C:\Users\User\AppData\Local\MinGit\cmd\git.exe` if system git is missing.

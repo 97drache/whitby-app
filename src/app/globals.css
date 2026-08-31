@@ -7,8 +7,8 @@
   --muted: #8a6f78;
   --line: #eedfe4;
   --rose: #c45c78;
-  --buy: #2a9a74;
-  --sell: #d4526a;
+  --buy: #dc2626;
+  --sell: #2563eb;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
