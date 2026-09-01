@@ -147,12 +147,34 @@ async function callGemini(apiKey: string, mime: string, base64: string, model: s
   };
 
   if (!res.ok) {
-    throw new Error(payload.error?.message || `${model} 호출에 실패했습니다.`);
+    const raw = payload.error?.message || `${model} 호출에 실패했습니다.`;
+    if (/api[_ ]?key/i.test(raw) || /permission/i.test(raw)) {
+      throw new Error("Gemini API 키가 거부되었습니다. Vercel의 GEMINI_API_KEY를 확인해 주세요.");
+    }
+    throw new Error(raw);
   }
 
   const text = payload.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
   if (!text) throw new Error("모델이 비어 있는 응답을 보냈습니다.");
   return parseSheet(extractJson(text));
+}
+
+function cleanKey(value: string | null | undefined): string {
+  return (value || "").trim().replace(/^["']|["']$/g, "");
+}
+
+function resolveApiKey(req: Request, form: FormData): string {
+  const fromEnv = cleanKey(process.env.GEMINI_API_KEY);
+  if (fromEnv) return fromEnv;
+  const fromHeader = cleanKey(req.headers.get("x-gemini-key"));
+  if (fromHeader) return fromHeader;
+  const fromForm = form.get("geminiKey");
+  if (typeof fromForm === "string") return cleanKey(fromForm);
+  return "";
+}
+
+export async function GET() {
+  return NextResponse.json({ hasServerKey: Boolean(cleanKey(process.env.GEMINI_API_KEY)) });
 }
 
 export async function POST(req: Request) {
@@ -163,15 +185,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "이미지가 없습니다." }, { status: 400 });
     }
 
-    const apiKey =
-      process.env.GEMINI_API_KEY ||
-      req.headers.get("x-gemini-key") ||
-      "";
+    const apiKey = resolveApiKey(req, form);
     if (!apiKey) {
       return NextResponse.json(
         {
           error:
-            "Gemini API 키가 필요합니다. .env.local의 GEMINI_API_KEY 또는 앱 설정에 키를 넣어 주세요.",
+            "Gemini API 키가 없습니다. Vercel 환경 변수 GEMINI_API_KEY를 넣거나, 앱 설정에 키를 입력해 주세요.",
         },
         { status: 401 },
       );

@@ -58,9 +58,8 @@ export function scaleLevels(
 }
 
 /**
- * .5 sell multipliers: fill lowest price first.
- * Lowest qty is fixed first so roundHalfUp(low * m) matches that row,
- * then each higher row is the remainder to roundHalfUp(running sum * m).
+ * .5 sell multipliers: highest price first (sheet top-to-bottom / fill order).
+ * Cumulative from 0: each row is roundHalfUp(runningSum * m) minus the previous scaled total.
  * Does not use holdings. Buy scaling stays in scaleLevels.
  */
 export function scaleSellLevels(levels: Level[], multiplier: number): Level[] {
@@ -72,7 +71,7 @@ export function scaleSellLevels(levels: Level[], multiplier: number): Level[] {
   }
 
   const ranked = levels.map((level, index) => ({ ...level, index }));
-  ranked.sort((a, b) => a.price - b.price);
+  ranked.sort((a, b) => b.price - a.price);
 
   let cumQty = 0;
   let cumScaled = 0;

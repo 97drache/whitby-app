@@ -103,6 +103,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
   const [showSource, setShowSource] = useState(false);
   const [sheetKey, setSheetKey] = useState(0);
   const [multipliers, setMultipliers] = useState<Record<string, number>>(defaultMultipliers);
+  const [hasServerKey, setHasServerKey] = useState(false);
 
   function rememberKey(value: string) {
     setApiKey(value);
@@ -125,6 +126,12 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
     apiKeyRef.current = stored;
     setKeySaved(stored.length > 0);
     setMultipliers(readStoredMultipliers());
+    fetch("/api/parse")
+      .then((r) => r.json())
+      .then((data: { hasServerKey?: boolean }) => {
+        if (data.hasServerKey) setHasServerKey(true);
+      })
+      .catch(() => {});
     if (!initialSheet) {
       const saved = readStoredSheet();
       if (saved) setSheet(saved);
@@ -150,7 +157,10 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
       form.append("image", blob, "sheet.jpg");
       const key = apiKeyRef.current.trim() || readStoredKey();
       const headers: HeadersInit = {};
-      if (key) headers["x-gemini-key"] = key;
+      if (key) {
+        headers["x-gemini-key"] = key;
+        form.append("geminiKey", key);
+      }
       const res = await fetch("/api/parse", { method: "POST", body: form, headers });
       const data = (await res.json()) as { sheet?: ExtractedSheet; model?: string; error?: string };
       if (!res.ok || !data.sheet) throw new Error(data.error || "추출에 실패했습니다.");
@@ -190,7 +200,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
           onClick={() => setShowKey((v) => !v)}
           className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#8a6f78] ring-1 ring-[#eedfe4]"
         >
-          {showKey ? "닫기" : keySaved ? "설정 · 저장됨" : "설정"}
+          {showKey ? "닫기" : hasServerKey ? "설정" : keySaved ? "설정 · 저장됨" : "설정"}
         </button>
       </header>
 
@@ -199,20 +209,28 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
       {showKey && (
         <section className="card mb-4 p-4">
           <p className="text-sm font-medium">Gemini API 키</p>
-          <p className="mt-1 text-xs leading-relaxed text-[#8a6f78]">
-            이 폰에만 저장되며 한 번 넣으면 다시 묻지 않습니다. 사진은 서버에 남기지 않습니다.
-          </p>
-          <input
-            type="password"
-            autoComplete="off"
-            value={apiKey}
-            onChange={(e) => rememberKey(e.target.value)}
-            placeholder="AIza..."
-            className="mt-3 w-full rounded-2xl bg-[#fdf7f9] px-3 py-2.5 text-sm outline-none ring-1 ring-[#eedfe4] focus:ring-[#c45c78]"
-          />
-          <p className={`mt-2 text-xs ${keySaved ? "text-[#2a9a74]" : "text-[#8a6f78]"}`}>
-            {keySaved ? "이 기기에 저장되어 있습니다." : "키를 입력하면 바로 저장됩니다."}
-          </p>
+          {hasServerKey ? (
+            <p className="mt-1 text-xs leading-relaxed text-[#2a9a74]">
+              서버에 키가 설정되어 있어 폰에서 다시 넣을 필요가 없습니다.
+            </p>
+          ) : (
+            <>
+              <p className="mt-1 text-xs leading-relaxed text-[#8a6f78]">
+                Vercel에 GEMINI_API_KEY를 넣으면 이 입력은 필요 없습니다. 임시로 쓸 때만 아래에 넣으세요.
+              </p>
+              <input
+                type="password"
+                autoComplete="off"
+                value={apiKey}
+                onChange={(e) => rememberKey(e.target.value)}
+                placeholder="AIza..."
+                className="mt-3 w-full rounded-2xl bg-[#fdf7f9] px-3 py-2.5 text-sm outline-none ring-1 ring-[#eedfe4] focus:ring-[#c45c78]"
+              />
+              <p className={`mt-2 text-xs ${keySaved ? "text-[#2a9a74]" : "text-[#8a6f78]"}`}>
+                {keySaved ? "이 기기에 저장되어 있습니다." : "키를 입력하면 바로 저장됩니다."}
+              </p>
+            </>
+          )}
         </section>
       )}
 
