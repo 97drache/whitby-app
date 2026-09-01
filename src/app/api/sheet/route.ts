@@ -1,25 +1,19 @@
 import { NextResponse } from "next/server";
-import { isExtractedSheet, isSheetStoreConfigured, readLatestSheet, writeLatestSheet } from "@/lib/sheetStore";
+import { isExtractedSheet, readLatestSheet, writeLatestSheet } from "@/lib/sheetStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (!isSheetStoreConfigured()) {
-    return NextResponse.json({ configured: false, sheet: null, updatedAt: null });
-  }
-  const stored = await readLatestSheet();
+  const { configured, stored } = await readLatestSheet();
   return NextResponse.json({
-    configured: true,
+    configured,
     sheet: stored?.sheet ?? null,
     updatedAt: stored?.updatedAt ?? null,
   });
 }
 
 export async function PUT(req: Request) {
-  if (!isSheetStoreConfigured()) {
-    return NextResponse.json({ configured: false, ok: false }, { status: 503 });
-  }
   try {
     const body = (await req.json()) as { sheet?: unknown };
     if (!isExtractedSheet(body.sheet)) {
@@ -28,6 +22,9 @@ export async function PUT(req: Request) {
     const ok = await writeLatestSheet(body.sheet);
     return NextResponse.json({ configured: true, ok });
   } catch {
-    return NextResponse.json({ error: "저장에 실패했습니다." }, { status: 500 });
+    return NextResponse.json(
+      { configured: false, ok: false, error: "Blob 저장소가 연결되지 않았거나 저장에 실패했습니다." },
+      { status: 503 },
+    );
   }
 }
