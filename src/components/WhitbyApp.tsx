@@ -104,6 +104,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
   const [sheetKey, setSheetKey] = useState(0);
   const [multipliers, setMultipliers] = useState<Record<string, number>>(defaultMultipliers);
   const [hasServerKey, setHasServerKey] = useState(false);
+  const skipRemotePushRef = useRef(false);
 
   function rememberKey(value: string) {
     setApiKey(value);
@@ -135,6 +136,24 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
     if (!initialSheet) {
       const saved = readStoredSheet();
       if (saved) setSheet(saved);
+      fetch("/api/sheet")
+        .then((r) => r.json())
+        .then((data: { sheet?: ExtractedSheet | null }) => {
+          if (data.sheet && Array.isArray(data.sheet.buys) && Number.isFinite(data.sheet.holdings)) {
+            skipRemotePushRef.current = true;
+            setSheet(data.sheet);
+            setSheetKey((n) => n + 1);
+            return;
+          }
+          if (saved) {
+            fetch("/api/sheet", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ sheet: saved }),
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
     }
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
@@ -145,8 +164,21 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
   }, [initialSheet]);
 
   useEffect(() => {
-    if (sheet) writeStoredSheet(sheet);
-  }, [sheet]);
+    if (!sheet || initialSheet) return;
+    writeStoredSheet(sheet);
+    if (skipRemotePushRef.current) {
+      skipRemotePushRef.current = false;
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      fetch("/api/sheet", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sheet }),
+      }).catch(() => {});
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [sheet, initialSheet]);
 
   async function runParse(imageFile: File) {
     setBusy(true);
