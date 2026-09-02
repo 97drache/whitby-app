@@ -58,11 +58,11 @@ export function scaleLevels(
 }
 
 /**
- * .5 sell multipliers: highest price first (sheet top-to-bottom / fill order).
- * Cumulative from 0: each row is roundHalfUp(runningSum * m) minus the previous scaled total.
- * Does not use holdings. Buy scaling stays in scaleLevels.
+ * .5 sell multipliers: lowest price fills first.
+ * After each fill, remaining holdings * multiplier (round half up) must match.
+ * Each row is the drop in scaled holdings at that step. Buy scaling stays in scaleLevels.
  */
-export function scaleSellLevels(levels: Level[], multiplier: number): Level[] {
+export function scaleSellLevels(levels: Level[], multiplier: number, holdings: number): Level[] {
   if (!isHalfMultiplier(multiplier) || !levels.length) {
     return levels.map((level) => ({
       price: level.price,
@@ -71,17 +71,19 @@ export function scaleSellLevels(levels: Level[], multiplier: number): Level[] {
   }
 
   const ranked = levels.map((level, index) => ({ ...level, index }));
-  ranked.sort((a, b) => b.price - a.price);
+  ranked.sort((a, b) => a.price - b.price);
 
-  let cumQty = 0;
-  let cumScaled = 0;
+  const scaledHold = roundHalfUp(holdings * multiplier);
+  let soldOrig = 0;
+  let soldScaled = 0;
   const scaled = new Array<number>(levels.length);
 
   for (const row of ranked) {
-    cumQty += row.qty;
-    const target = roundHalfUp(cumQty * multiplier);
-    scaled[row.index] = target - cumScaled;
-    cumScaled = target;
+    soldOrig += row.qty;
+    const remainingScaled = roundHalfUp((holdings - soldOrig) * multiplier);
+    const qty = scaledHold - remainingScaled - soldScaled;
+    scaled[row.index] = qty;
+    soldScaled += qty;
   }
 
   return levels.map((level, index) => ({

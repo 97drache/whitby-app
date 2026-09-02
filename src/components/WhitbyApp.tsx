@@ -665,8 +665,8 @@ function ScaledTable({ sheet, multiplier }: { sheet: ExtractedSheet; multiplier:
     [sheet.buys, multiplier, sheet.holdings],
   );
   const sells = useMemo(
-    () => scaleSellLevels(sheet.sells, multiplier),
-    [sheet.sells, multiplier],
+    () => scaleSellLevels(sheet.sells, multiplier, sheet.holdings),
+    [sheet.sells, multiplier, sheet.holdings],
   );
 
   return (
