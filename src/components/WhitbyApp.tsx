@@ -327,7 +327,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
               <div>
                 <p className="text-xs text-[#8a6f78]">추가</p>
                 <p className="text-[20px] font-semibold tracking-tight text-[#3a2a30]">
-                  {customValid ? `${formatMultiplier(customMultiplier)}배수` : "배수"}
+                  {customValid ? `(x${formatMultiplier(customMultiplier)})` : "배수"}
                 </p>
                 {customValid && (
                   <ScaledCash cashUsd={sheet.cashUsd} multiplier={customMultiplier} />
@@ -378,13 +378,13 @@ function CycleBanner({ sheet }: { sheet: ExtractedSheet }) {
         </div>
         <div>
           <p className="text-[11px] text-[#8a6f78]">보유평단</p>
-          <p className="mt-1 text-[15px] font-semibold tabular text-[#3a2a30]">
+          <p className="mt-1 text-[15px] font-semibold tabular text-[#15803d]">
             {sheet.avgCost != null ? formatPrice(sheet.avgCost) : "—"}
           </p>
         </div>
         <div>
           <p className="text-[11px] text-[#8a6f78]">보유 개수</p>
-          <p className="mt-1 text-[15px] font-semibold tabular text-[#3a2a30]">{formatQty(sheet.holdings)}</p>
+          <p className="mt-1 text-[15px] font-semibold tabular text-[#15803d]">{formatQty(sheet.holdings)}</p>
         </div>
       </div>
       <div className="mt-3 grid grid-cols-3 text-center">
@@ -622,7 +622,7 @@ function MultiplierCard({
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-[20px] font-semibold tracking-tight text-[#3a2a30]">
-            {name} ({formatMultiplier(multiplier)}배수)
+            {name} (x{formatMultiplier(multiplier)})
           </h2>
           <ScaledCash cashUsd={sheet.cashUsd} multiplier={multiplier} />
         </div>
@@ -677,8 +677,8 @@ function ScaledTable({ sheet, multiplier }: { sheet: ExtractedSheet; multiplier:
           <span className="text-[20px] leading-none tabular font-semibold text-[#3a2a30]">{formatQty(holdings)}</span>
         </div>
         <p className="px-1 text-center text-[13px] font-normal text-[#3a2a30]">Limit VWAP: 일반예약 + 장마감 30분전</p>
-        <LevelTable caption="매수" tone="buy" rows={buys} />
-        {sells.length > 0 && <LevelTable caption="매도" tone="sell" rows={sells} />}
+        <LevelTable caption="예약매수" tone="buy" rows={buys} />
+        {sells.length > 0 && <LevelTable caption="예약매도" tone="sell" rows={sells} />}
       </div>
       <p className="mt-5 text-sm font-semibold tabular text-[#c45c78]">
         매수금 ${formatUsd(buyNotional(buys))}
@@ -692,7 +692,7 @@ function LevelTable({ caption, tone, rows }: { caption: string; tone: "buy" | "s
   return (
     <div>
       <div className="mb-1.5 grid grid-cols-2 px-1 text-[11px] text-[#8a6f78]">
-        <span>{caption}가</span>
+        <span>{caption}</span>
         <span className="text-right">개수</span>
       </div>
       <ul className="space-y-1.5">
