@@ -327,7 +327,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
               <div>
                 <p className="text-xs text-[#8a6f78]">추가</p>
                 <p className="text-[20px] font-semibold tracking-tight text-[#3a2a30]">
-                  {customValid ? `(x${formatMultiplier(customMultiplier)})` : "배수"}
+                  {customValid ? `( x ${formatMultiplier(customMultiplier)} )` : "배수"}
                 </p>
                 {customValid && (
                   <ScaledCash cashUsd={sheet.cashUsd} multiplier={customMultiplier} />
@@ -622,7 +622,7 @@ function MultiplierCard({
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-[20px] font-semibold tracking-tight text-[#3a2a30]">
-            {name} (x{formatMultiplier(multiplier)})
+            {name} ( x {formatMultiplier(multiplier)} )
           </h2>
           <ScaledCash cashUsd={sheet.cashUsd} multiplier={multiplier} />
         </div>
