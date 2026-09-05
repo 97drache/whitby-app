@@ -326,8 +326,8 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
             <div className="mb-3 flex items-end justify-between gap-3">
               <div>
                 <p className="text-xs text-[#8a6f78]">추가</p>
-                <p className="text-[20px] font-semibold tracking-tight text-[#3a2a30]">
-                  {customValid ? `( x ${formatMultiplier(customMultiplier)} )` : "배수"}
+                <p className="flex flex-wrap items-center gap-2 text-[20px] font-semibold tracking-tight text-[#3a2a30]">
+                  {customValid ? <MultiplierMark value={customMultiplier} /> : "배수"}
                 </p>
                 {customValid && (
                   <ScaledCash cashUsd={sheet.cashUsd} multiplier={customMultiplier} />
@@ -592,6 +592,17 @@ function LevelEditor({
   );
 }
 
+function MultiplierMark({ value }: { value: number }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="inline-flex items-center rounded-full bg-[#eee6f8] px-2.5 py-[3px] leading-none">
+        <span className="text-[17px] font-semibold italic tabular text-[#6d28d9]">{formatMultiplier(value)}</span>
+      </span>
+      <span className="text-[16px] font-medium not-italic text-[#3a2a30]">배수</span>
+    </span>
+  );
+}
+
 function MultiplierCard({
   name,
   multiplier,
@@ -621,8 +632,9 @@ function MultiplierCard({
     <section className="card p-4">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-[20px] font-semibold tracking-tight text-[#3a2a30]">
-            {name} ( x {formatMultiplier(multiplier)} )
+          <h2 className="flex flex-wrap items-center gap-2 text-[20px] font-semibold tracking-tight text-[#3a2a30]">
+            {name}
+            <MultiplierMark value={multiplier} />
           </h2>
           <ScaledCash cashUsd={sheet.cashUsd} multiplier={multiplier} />
         </div>
