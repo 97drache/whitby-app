@@ -595,7 +595,7 @@ function LevelEditor({
 function MultiplierMark({ value }: { value: number }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span className="inline-flex min-w-[3.25rem] items-center justify-center rounded-full bg-[#d8efe4] px-4 py-1 leading-none">
+      <span className="inline-flex min-w-[2.75rem] items-center justify-center rounded-full bg-[#d8efe4] px-3 py-1 leading-none">
         <span className="text-[17px] font-semibold not-italic tabular text-[#166534]">{formatMultiplier(value)}</span>
       </span>
       <span className="text-[16px] font-medium text-[#3a2a30]">배수</span>
