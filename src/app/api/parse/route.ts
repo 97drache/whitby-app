@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import type { ExtractedSheet, Level } from "@/lib/types";
+import {
+  fillRemainingAllQty,
+  isRemainingAllToken,
+  parseQtyNumber,
+  type DraftLevel,
+} from "@/lib/remainingAll";
+import type { ExtractedSheet } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -25,8 +31,8 @@ On the RIGHT of the LOWER/middle block:
 
 Return ONLY JSON with this shape:
 {
-  "buys": [{"price": number, "qty": number}],
-  "sells": [{"price": number, "qty": number}],
+  "buys": [{"price": number, "qty": number, "remainingAll": false}],
+  "sells": [{"price": number, "qty": number, "remainingAll": false}],
   "holdings": number,
   "avgCost": number,
   "closePrice": number,
@@ -40,6 +46,8 @@ Rules:
 - prices are the left number in each Limit Vwap row; qty is the right number.
 - Use dots as decimal separators. Strip thousands commas.
 - Do not invent rows. Omit empty rows.
+- Quantity may be the Korean text "남은전부" / "남은 전부" (or similar: 잔량전부, remaining all) instead of a number. KEEP that row. Set remainingAll: true and qty: null. Do NOT guess or compute that quantity.
+- remainingAll can appear on buys and/or sells, whether it is the only row or mixed with numeric qty rows.
 - holdings must be the 현재 보유 개수 integer.
 - avgCost is 보유평단 / 평단.
 - closePrice is 종가 (the close price number, not the date).
@@ -55,13 +63,23 @@ const MODELS = [
   "gemini-1.5-flash",
 ].filter((m, i, arr): m is string => Boolean(m) && arr.indexOf(m) === i);
 
-function asLevel(value: unknown): Level | null {
+function asLevel(value: unknown): DraftLevel | null {
   if (!value || typeof value !== "object") return null;
   const row = value as Record<string, unknown>;
   const price = Number(row.price);
-  const qty = Number(row.qty ?? row.quantity ?? row.count);
-  if (!Number.isFinite(price) || !Number.isFinite(qty)) return null;
-  return { price, qty };
+  if (!Number.isFinite(price) || price <= 0) return null;
+
+  const rawQty = row.qty ?? row.quantity ?? row.count;
+  const qty = parseQtyNumber(rawQty);
+  const remainingAll =
+    row.remainingAll === true ||
+    isRemainingAllToken(rawQty) ||
+    qty == null;
+
+  if (remainingAll) {
+    return { price, qty: 0, remainingAll: true };
+  }
+  return { price, qty, remainingAll: false };
 }
 
 function asMoney(value: unknown): number | null {
@@ -87,15 +105,17 @@ function parseSheet(raw: unknown): ExtractedSheet {
     throw new Error("시트 형식을 읽지 못했습니다.");
   }
   const data = raw as Record<string, unknown>;
-  const buys = Array.isArray(data.buys)
-    ? data.buys.map(asLevel).filter((v): v is Level => v !== null)
-    : [];
-  const sells = Array.isArray(data.sells)
-    ? data.sells.map(asLevel).filter((v): v is Level => v !== null)
-    : [];
   const holdings = Number(data.holdings);
-  if (!buys.length) throw new Error("매수 Limit VWAP를 찾지 못했습니다.");
   if (!Number.isFinite(holdings)) throw new Error("현재 보유 개수를 찾지 못했습니다.");
+  const buys = fillRemainingAllQty(
+    Array.isArray(data.buys) ? data.buys.map(asLevel).filter((v): v is DraftLevel => v !== null) : [],
+    holdings,
+  );
+  const sells = fillRemainingAllQty(
+    Array.isArray(data.sells) ? data.sells.map(asLevel).filter((v): v is DraftLevel => v !== null) : [],
+    holdings,
+  );
+  if (!buys.length) throw new Error("매수 Limit VWAP를 찾지 못했습니다.");
   return {
     buys,
     sells,
