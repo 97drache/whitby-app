@@ -41,6 +41,6 @@ export function fillRemainingAllQty(levels: DraftLevel[], holdings: number): Lev
 
   return levels.map((row, i) => {
     if (!row.remainingAll) return { price: row.price, qty: row.qty };
-    return { price: row.price, qty: i === lastRemaining ? remainder : 0 };
+    return { price: row.price, qty: i === lastRemaining ? remainder : 0, remainingAll: true };
   });
 }

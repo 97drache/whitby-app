@@ -34,6 +34,7 @@ export function scaleLevels(
     return levels.map((level) => ({
       price: level.price,
       qty: scaleQty(level.qty, multiplier),
+      remainingAll: level.remainingAll,
     }));
   }
 
@@ -54,6 +55,7 @@ export function scaleLevels(
   return levels.map((level, index) => ({
     price: level.price,
     qty: scaled[index],
+    remainingAll: level.remainingAll,
   }));
 }
 
@@ -67,6 +69,7 @@ export function scaleSellLevels(levels: Level[], multiplier: number, holdings: n
     return levels.map((level) => ({
       price: level.price,
       qty: scaleQty(level.qty, multiplier),
+      remainingAll: level.remainingAll,
     }));
   }
 
@@ -89,6 +92,7 @@ export function scaleSellLevels(levels: Level[], multiplier: number, holdings: n
   return levels.map((level, index) => ({
     price: level.price,
     qty: scaled[index],
+    remainingAll: level.remainingAll,
   }));
 }
 
@@ -103,6 +107,11 @@ export function formatPrice(value: number): string {
 export function formatQty(value: number): string {
   if (!Number.isFinite(value)) return "—";
   return value.toLocaleString("en-US");
+}
+
+export function formatOrderQty(level: Level): string {
+  const qty = formatQty(level.qty);
+  return level.remainingAll ? `남은전부 ${qty}` : qty;
 }
 
 export function formatMultiplier(value: number): string {

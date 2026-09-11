@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { compressImage } from "@/lib/compress";
 import {
   formatMultiplier,
+  formatOrderQty,
   formatPrice,
   formatQty,
   formatUsd,
@@ -572,16 +573,21 @@ function LevelEditor({
                 onChange(next);
               }}
             />
-            <NumberField
-              value={level.qty}
-              inputMode="numeric"
-              className={`rounded-2xl bg-[#fdf7f9] px-3 py-2 text-lg tabular outline-none ring-1 ring-[#eedfe4] ${accent}`}
-              onChange={(qty) => {
-                const next = [...levels];
-                next[i] = { ...level, qty };
-                onChange(next);
-              }}
-            />
+            <div className="flex min-w-0 items-center gap-1 rounded-2xl bg-[#fdf7f9] px-2 py-2 ring-1 ring-[#eedfe4]">
+              {level.remainingAll && (
+                <span className={`shrink-0 text-[11px] font-medium ${accent}`}>남은전부</span>
+              )}
+              <NumberField
+                value={level.qty}
+                inputMode="numeric"
+                className={`min-w-0 flex-1 bg-transparent px-1 text-lg tabular outline-none ${accent}`}
+                onChange={(qty) => {
+                  const next = [...levels];
+                  next[i] = { ...level, qty };
+                  onChange(next);
+                }}
+              />
+            </div>
             <button type="button" onClick={() => onChange(levels.filter((_, idx) => idx !== i))} className="px-2 text-xs text-[#8a6f78]">
               삭제
             </button>
@@ -711,7 +717,7 @@ function LevelTable({ caption, tone, rows }: { caption: string; tone: "buy" | "s
         {rows.map((row, i) => (
           <li key={`${caption}-${i}-${row.price}`} className="flex items-center justify-between rounded-2xl bg-[#fdf7f9] px-4 py-2.5">
             <span className="text-[18px] tabular font-medium text-black">{formatPrice(row.price)}</span>
-            <span className={`text-[20px] leading-none tabular font-semibold ${qtyClass}`}>{formatQty(row.qty)}</span>
+            <span className={`text-[20px] leading-none tabular font-semibold whitespace-nowrap ${qtyClass}`}>{formatOrderQty(row)}</span>
           </li>
         ))}
       </ul>

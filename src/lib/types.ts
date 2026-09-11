@@ -1,6 +1,7 @@
 export type Level = {
   price: number;
   qty: number;
+  remainingAll?: boolean;
 };
 
 export type ExtractedSheet = {
