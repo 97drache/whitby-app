@@ -363,6 +363,12 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
           )}
         </div>
       )}
+
+      {preview && (
+        <figure className="card mt-3 overflow-hidden">
+          <img src={preview} alt="올린 시트" className="block h-auto w-full" />
+        </figure>
+      )}
       </div>
     </main>
   );
