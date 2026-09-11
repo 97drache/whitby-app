@@ -1,4 +1,4 @@
-import type { Level } from "./types";
+import type { ExtractedSheet, Level } from "./types";
 
 export type DraftLevel = {
   price: number;
@@ -43,4 +43,39 @@ export function fillRemainingAllQty(levels: DraftLevel[], holdings: number): Lev
     if (!row.remainingAll) return { price: row.price, qty: row.qty };
     return { price: row.price, qty: i === lastRemaining ? remainder : 0, remainingAll: true };
   });
+}
+
+export function isRemainingAllFlag(value: unknown): boolean {
+  if (value === true || value === 1) return true;
+  if (typeof value !== "string") return false;
+  return value.trim().toLowerCase() === "true";
+}
+
+/**
+ * Parser flags win. Otherwise, if this group's quantities already sum to holdings
+ * (한칸 남은전부, or 숫자 + 남은전부), mark the last row.
+ */
+export function applyRemainingAll(levels: Level[], holdings: number): Level[] {
+  if (!levels.length) return levels;
+  const drafts: DraftLevel[] = levels.map((row) => ({
+    price: row.price,
+    qty: row.qty,
+    remainingAll: Boolean(row.remainingAll),
+  }));
+  if (!drafts.some((row) => row.remainingAll)) {
+    const sum = drafts.reduce((total, row) => total + row.qty, 0);
+    if (sum === holdings) {
+      drafts[drafts.length - 1].remainingAll = true;
+    }
+  }
+  if (!drafts.some((row) => row.remainingAll)) return levels;
+  return fillRemainingAllQty(drafts, holdings);
+}
+
+export function normalizeSheet(sheet: ExtractedSheet): ExtractedSheet {
+  return {
+    ...sheet,
+    buys: applyRemainingAll(sheet.buys, sheet.holdings),
+    sells: applyRemainingAll(sheet.sells, sheet.holdings),
+  };
 }

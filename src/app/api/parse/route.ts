@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import {
   fillRemainingAllQty,
+  isRemainingAllFlag,
   isRemainingAllToken,
   parseQtyNumber,
+  applyRemainingAll,
   type DraftLevel,
 } from "@/lib/remainingAll";
 import type { ExtractedSheet } from "@/lib/types";
@@ -46,8 +48,8 @@ Rules:
 - prices are the left number in each Limit Vwap row; qty is the right number.
 - Use dots as decimal separators. Strip thousands commas.
 - Do not invent rows. Omit empty rows.
-- Quantity may be the Korean text "남은전부" / "남은 전부" (or similar: 잔량전부, remaining all) instead of a number. KEEP that row. Set remainingAll: true and qty: null. Do NOT guess or compute that quantity.
-- remainingAll can appear on buys and/or sells, whether it is the only row or mixed with numeric qty rows.
+- Quantity may be the Korean text "남은전부" / "남은 전부" (or similar: 잔량전부, remaining all) instead of a number. KEEP that row. Set remainingAll: true. Also set qtyText to the exact cell text (e.g. "남은전부"). You may omit qty or set it null. Do NOT replace 남은전부 with a guessed number unless remainingAll is true.
+- remainingAll can appear on buys and/or sells, whether it is the only row or mixed with numeric qty rows. A single buy/sell equal to 현재 보유 개수 is often 남은전부.
 - holdings must be the 현재 보유 개수 integer.
 - avgCost is 보유평단 / 평단.
 - closePrice is 종가 (the close price number, not the date).
@@ -70,11 +72,14 @@ function asLevel(value: unknown): DraftLevel | null {
   if (!Number.isFinite(price) || price <= 0) return null;
 
   const rawQty = row.qty ?? row.quantity ?? row.count;
+  const rawText = row.qtyText ?? row.qtyLabel ?? row.rawQty ?? rawQty;
   const qty = parseQtyNumber(rawQty);
   const remainingAll =
-    row.remainingAll === true ||
+    isRemainingAllFlag(row.remainingAll) ||
     isRemainingAllToken(rawQty) ||
-    qty == null;
+    isRemainingAllToken(rawText) ||
+    qty == null ||
+    qty === 0;
 
   if (remainingAll) {
     return { price, qty: 0, remainingAll: true };
@@ -107,12 +112,18 @@ function parseSheet(raw: unknown): ExtractedSheet {
   const data = raw as Record<string, unknown>;
   const holdings = Number(data.holdings);
   if (!Number.isFinite(holdings)) throw new Error("현재 보유 개수를 찾지 못했습니다.");
-  const buys = fillRemainingAllQty(
-    Array.isArray(data.buys) ? data.buys.map(asLevel).filter((v): v is DraftLevel => v !== null) : [],
+  const buys = applyRemainingAll(
+    fillRemainingAllQty(
+      Array.isArray(data.buys) ? data.buys.map(asLevel).filter((v): v is DraftLevel => v !== null) : [],
+      holdings,
+    ),
     holdings,
   );
-  const sells = fillRemainingAllQty(
-    Array.isArray(data.sells) ? data.sells.map(asLevel).filter((v): v is DraftLevel => v !== null) : [],
+  const sells = applyRemainingAll(
+    fillRemainingAllQty(
+      Array.isArray(data.sells) ? data.sells.map(asLevel).filter((v): v is DraftLevel => v !== null) : [],
+      holdings,
+    ),
     holdings,
   );
   if (!buys.length) throw new Error("매수 Limit VWAP를 찾지 못했습니다.");

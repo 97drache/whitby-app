@@ -17,6 +17,7 @@ import {
 } from "@/lib/calc";
 import { formatTradeDate, nextUsTradingDay } from "@/lib/market";
 import { NAMED_PRESETS, type ExtractedSheet, type Level } from "@/lib/types";
+import { normalizeSheet } from "@/lib/remainingAll";
 
 const KEY_STORAGE = "whitby_gemini_key";
 const MULTIPLIER_STORAGE = "whitby_multipliers";
@@ -74,7 +75,7 @@ function readStoredSheet(): ExtractedSheet | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as ExtractedSheet;
     if (!parsed || !Array.isArray(parsed.buys) || !Number.isFinite(parsed.holdings)) return null;
-    return parsed;
+    return normalizeSheet(parsed);
   } catch {
     return null;
   }
@@ -93,7 +94,7 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
   const previewRef = useRef<string | null>(null);
   const apiKeyRef = useRef("");
   const [preview, setPreview] = useState<string | null>(null);
-  const [sheet, setSheet] = useState<ExtractedSheet | null>(initialSheet);
+  const [sheet, setSheetState] = useState<ExtractedSheet | null>(initialSheet ? normalizeSheet(initialSheet) : null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modelUsed, setModelUsed] = useState<string | null>(initialSheet ? "sample" : null);
@@ -106,6 +107,10 @@ export default function WhitbyApp({ initialSheet = null }: { initialSheet?: Extr
   const [multipliers, setMultipliers] = useState<Record<string, number>>(defaultMultipliers);
   const [hasServerKey, setHasServerKey] = useState(false);
   const skipRemotePushRef = useRef(false);
+
+  function setSheet(next: ExtractedSheet | null) {
+    setSheetState(next ? normalizeSheet(next) : null);
+  }
 
   function rememberKey(value: string) {
     setApiKey(value);
