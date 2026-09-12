@@ -109,11 +109,6 @@ export function formatQty(value: number): string {
   return value.toLocaleString("en-US");
 }
 
-export function formatOrderQty(level: Level): string {
-  const qty = formatQty(level.qty);
-  return level.remainingAll ? `남은전부 ${qty}` : qty;
-}
-
 export function formatMultiplier(value: number): string {
   if (Number.isInteger(value)) return `${value}`;
   return String(value);

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { compressImage } from "@/lib/compress";
 import {
   formatMultiplier,
-  formatOrderQty,
   formatPrice,
   formatQty,
   formatUsd,
@@ -728,14 +727,9 @@ function LevelTable({ caption, tone, rows }: { caption: string; tone: "buy" | "s
         {rows.map((row, i) => (
           <li key={`${caption}-${i}-${row.price}`} className="flex items-center justify-between rounded-2xl bg-[#fdf7f9] px-4 py-2.5">
             <span className="text-[18px] tabular font-medium text-black">{formatPrice(row.price)}</span>
-            <span
-              className={`${
-                row.remainingAll
-                  ? "text-sm font-semibold tabular whitespace-nowrap"
-                  : "text-[20px] leading-none tabular font-semibold whitespace-nowrap"
-              } ${qtyClass}`}
-            >
-              {formatOrderQty(row)}
+            <span className={`inline-flex items-baseline gap-1 whitespace-nowrap ${qtyClass}`}>
+              {row.remainingAll && <span className="text-sm font-semibold">남은전부</span>}
+              <span className="text-[20px] leading-none tabular font-semibold">{formatQty(row.qty)}</span>
             </span>
           </li>
         ))}
