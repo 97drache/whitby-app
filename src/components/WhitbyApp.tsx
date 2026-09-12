@@ -585,8 +585,8 @@ function LevelEditor({
               }}
             />
             <div className="flex min-w-0 items-center gap-1 rounded-2xl bg-[#fdf7f9] px-2 py-2 ring-1 ring-[#eedfe4]">
-              {level.remainingAll && (
-                <span className={`shrink-0 text-[11px] font-medium ${accent}`}>남은전부</span>
+              {tone === "sell" && level.remainingAll && (
+                <span className={`shrink-0 text-sm font-semibold ${accent}`}>남은전부</span>
               )}
               <NumberField
                 value={level.qty}
@@ -728,7 +728,15 @@ function LevelTable({ caption, tone, rows }: { caption: string; tone: "buy" | "s
         {rows.map((row, i) => (
           <li key={`${caption}-${i}-${row.price}`} className="flex items-center justify-between rounded-2xl bg-[#fdf7f9] px-4 py-2.5">
             <span className="text-[18px] tabular font-medium text-black">{formatPrice(row.price)}</span>
-            <span className={`text-[20px] leading-none tabular font-semibold whitespace-nowrap ${qtyClass}`}>{formatOrderQty(row)}</span>
+            <span
+              className={`${
+                row.remainingAll
+                  ? "text-sm font-semibold tabular whitespace-nowrap"
+                  : "text-[20px] leading-none tabular font-semibold whitespace-nowrap"
+              } ${qtyClass}`}
+            >
+              {formatOrderQty(row)}
+            </span>
           </li>
         ))}
       </ul>

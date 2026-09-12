@@ -75,7 +75,7 @@ export function applyRemainingAll(levels: Level[], holdings: number): Level[] {
 export function normalizeSheet(sheet: ExtractedSheet): ExtractedSheet {
   return {
     ...sheet,
-    buys: applyRemainingAll(sheet.buys, sheet.holdings),
+    buys: sheet.buys.map((row) => ({ price: row.price, qty: row.qty })),
     sells: applyRemainingAll(sheet.sells, sheet.holdings),
   };
 }

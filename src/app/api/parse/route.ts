@@ -7,7 +7,7 @@ import {
   applyRemainingAll,
   type DraftLevel,
 } from "@/lib/remainingAll";
-import type { ExtractedSheet } from "@/lib/types";
+import type { ExtractedSheet, Level } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -33,7 +33,7 @@ On the RIGHT of the LOWER/middle block:
 
 Return ONLY JSON with this shape:
 {
-  "buys": [{"price": number, "qty": number, "remainingAll": false}],
+  "buys": [{"price": number, "qty": number}],
   "sells": [{"price": number, "qty": number, "remainingAll": false}],
   "holdings": number,
   "avgCost": number,
@@ -48,8 +48,9 @@ Rules:
 - prices are the left number in each Limit Vwap row; qty is the right number.
 - Use dots as decimal separators. Strip thousands commas.
 - Do not invent rows. Omit empty rows.
-- Quantity may be the Korean text "남은전부" / "남은 전부" (or similar: 잔량전부, remaining all) instead of a number. KEEP that row. Set remainingAll: true. Also set qtyText to the exact cell text (e.g. "남은전부"). You may omit qty or set it null. Do NOT replace 남은전부 with a guessed number unless remainingAll is true.
-- remainingAll can appear on buys and/or sells, whether it is the only row or mixed with numeric qty rows. A single buy/sell equal to 현재 보유 개수 is often 남은전부.
+- BUY qty is always a number. Never use remainingAll on buys. 남은전부 never appears in the UPPER/buy block.
+- SELL quantity may be the Korean text "남은전부" / "남은 전부" (or similar: 잔량전부, remaining all) instead of a number. KEEP that row. Set remainingAll: true. Also set qtyText to the exact cell text (e.g. "남은전부"). You may omit qty or set it null. Do NOT replace 남은전부 with a guessed number unless remainingAll is true.
+- remainingAll is SELL-only. It can be the only sell row or mixed with numeric sell qty rows. A single sell equal to 현재 보유 개수 is often 남은전부.
 - holdings must be the 현재 보유 개수 integer.
 - avgCost is 보유평단 / 평단.
 - closePrice is 종가 (the close price number, not the date).
@@ -64,6 +65,15 @@ const MODELS = [
   "gemini-2.5-flash",
   "gemini-1.5-flash",
 ].filter((m, i, arr): m is string => Boolean(m) && arr.indexOf(m) === i);
+
+function asBuyLevel(value: unknown): Level | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const price = Number(row.price);
+  if (!Number.isFinite(price) || price <= 0) return null;
+  const qty = parseQtyNumber(row.qty ?? row.quantity ?? row.count) ?? 0;
+  return { price, qty };
+}
 
 function asLevel(value: unknown): DraftLevel | null {
   if (!value || typeof value !== "object") return null;
@@ -112,13 +122,9 @@ function parseSheet(raw: unknown): ExtractedSheet {
   const data = raw as Record<string, unknown>;
   const holdings = Number(data.holdings);
   if (!Number.isFinite(holdings)) throw new Error("현재 보유 개수를 찾지 못했습니다.");
-  const buys = applyRemainingAll(
-    fillRemainingAllQty(
-      Array.isArray(data.buys) ? data.buys.map(asLevel).filter((v): v is DraftLevel => v !== null) : [],
-      holdings,
-    ),
-    holdings,
-  );
+  const buys = Array.isArray(data.buys)
+    ? data.buys.map(asBuyLevel).filter((v): v is Level => v !== null)
+    : [];
   const sells = applyRemainingAll(
     fillRemainingAllQty(
       Array.isArray(data.sells) ? data.sells.map(asLevel).filter((v): v is DraftLevel => v !== null) : [],
