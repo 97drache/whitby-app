@@ -45,4 +45,5 @@ export const NAMED_PRESETS: NamedPreset[] = [
   { id: "miyeong", name: "미영", defaultMultiplier: 9 },
   { id: "rael", name: "레엘", defaultMultiplier: 1.5 },
   { id: "yongwoon", name: "용운", defaultMultiplier: 6 },
+  { id: "sunhee", name: "순희", defaultMultiplier: 1 },
 ];
