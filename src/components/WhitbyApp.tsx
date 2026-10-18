@@ -705,7 +705,7 @@ function ScaledTable({ sheet, multiplier }: { sheet: ExtractedSheet; multiplier:
           <span className="text-[20px] leading-none tabular font-semibold text-[#3a2a30]">{formatQty(holdings)}</span>
         </div>
         <p className="px-1 text-center text-[13px] font-normal text-[#3a2a30]">Limit VWAP: 일반예약 + 장마감 30분전</p>
-        {buys.length > 0 && <LevelTable caption="예약매수" tone="buy" rows={buys} />}
+        <LevelTable caption="예약매수" tone="buy" rows={buys} emptyPriceLabel="없음" />
         {sells.length > 0 && <LevelTable caption="예약매도" tone="sell" rows={sells} />}
       </div>
       {buys.length > 0 && (
@@ -717,7 +717,17 @@ function ScaledTable({ sheet, multiplier }: { sheet: ExtractedSheet; multiplier:
   );
 }
 
-function LevelTable({ caption, tone, rows }: { caption: string; tone: "buy" | "sell"; rows: Level[] }) {
+function LevelTable({
+  caption,
+  tone,
+  rows,
+  emptyPriceLabel,
+}: {
+  caption: string;
+  tone: "buy" | "sell";
+  rows: Level[];
+  emptyPriceLabel?: string;
+}) {
   const qtyClass = tone === "buy" ? "text-[#dc2626]" : "text-[#2563eb]";
   return (
     <div>
@@ -726,15 +736,22 @@ function LevelTable({ caption, tone, rows }: { caption: string; tone: "buy" | "s
         <span className="text-right">개수</span>
       </div>
       <ul className="space-y-1.5">
-        {rows.map((row, i) => (
-          <li key={`${caption}-${i}-${row.price}`} className="flex items-center justify-between rounded-2xl bg-[#fdf7f9] px-4 py-2.5">
-            <span className="text-[18px] tabular font-medium text-black">{formatPrice(row.price)}</span>
-            <span className={`inline-flex items-baseline gap-1 whitespace-nowrap ${qtyClass}`}>
-              {row.remainingAll && <span className="text-sm font-semibold">남은전부</span>}
-              <span className="text-[20px] leading-none tabular font-semibold">{formatQty(row.qty)}</span>
-            </span>
+        {rows.length === 0 && emptyPriceLabel ? (
+          <li className="flex items-center justify-between rounded-2xl bg-[#fdf7f9] px-4 py-2.5">
+            <span className="text-[18px] font-medium text-black">{emptyPriceLabel}</span>
+            <span />
           </li>
-        ))}
+        ) : (
+          rows.map((row, i) => (
+            <li key={`${caption}-${i}-${row.price}`} className="flex items-center justify-between rounded-2xl bg-[#fdf7f9] px-4 py-2.5">
+              <span className="text-[18px] tabular font-medium text-black">{formatPrice(row.price)}</span>
+              <span className={`inline-flex items-baseline gap-1 whitespace-nowrap ${qtyClass}`}>
+                {row.remainingAll && <span className="text-sm font-semibold">남은전부</span>}
+                <span className="text-[20px] leading-none tabular font-semibold">{formatQty(row.qty)}</span>
+              </span>
+            </li>
+          ))
+        )}
       </ul>
     </div>
   );
