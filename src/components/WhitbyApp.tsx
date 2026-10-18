@@ -678,7 +678,7 @@ function MultiplierCard({
       </div>
       {!Number.isInteger(multiplier) && (
         <p className="mb-3 text-[11px] font-medium text-[#c45c78]">
-          .5배수는 보유·매수를 누적해 반올림하고, 매도는 낮은가부터 계산합니다.
+          소수 배수는 보유·매수를 누적해 반올림하고, 매도는 낮은가부터 계산합니다.
         </p>
       )}
       <ScaledTable sheet={sheet} multiplier={multiplier} />

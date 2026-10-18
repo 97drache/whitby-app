@@ -1,28 +1,21 @@
 import type { Level } from "./types";
 
-export function isHalfMultiplier(multiplier: number): boolean {
-  if (!Number.isFinite(multiplier) || Number.isInteger(multiplier)) return false;
-  return Math.abs(Math.abs(multiplier % 1) - 0.5) < 1e-8;
-}
-
 /** 사사오입: 0.5 이상은 올림. */
 export function roundHalfUp(n: number): number {
   return Math.floor(n + 0.5);
 }
 
-/** Integer multipliers stay exact. .5 multipliers round half up. */
+/** Integer multipliers stay exact. Fractional ones use round half up. */
 export function scaleQty(qty: number, multiplier: number): number {
   const raw = qty * multiplier;
   if (Number.isInteger(multiplier)) return raw;
-  if (isHalfMultiplier(multiplier)) return roundHalfUp(raw);
-  return Math.round(raw);
+  return roundHalfUp(raw);
 }
 
 /**
- * .5 multipliers: scale rows in price order so the running total
- * matches roundHalfUp(cumulativeQty * multiplier).
+ * Fractional multipliers: scale rows in price order so the running total
+ * matches roundHalfUp(cumulativeQty * multiplier). Integers stay exact.
  * Buys pass holdings as baseQty (high price first).
- * Sells pass 0 (low price first).
  */
 export function scaleLevels(
   levels: Level[],
@@ -30,7 +23,7 @@ export function scaleLevels(
   baseQty = 0,
   priceOrder: "desc" | "asc" = "desc",
 ): Level[] {
-  if (!isHalfMultiplier(multiplier) || !levels.length) {
+  if (Number.isInteger(multiplier) || !levels.length) {
     return levels.map((level) => ({
       price: level.price,
       qty: scaleQty(level.qty, multiplier),
@@ -60,12 +53,12 @@ export function scaleLevels(
 }
 
 /**
- * .5 sell multipliers: lowest price fills first.
+ * Fractional sell multipliers: lowest price fills first.
  * After each fill, remaining holdings * multiplier (round half up) must match.
  * Each row is the drop in scaled holdings at that step. Buy scaling stays in scaleLevels.
  */
 export function scaleSellLevels(levels: Level[], multiplier: number, holdings: number): Level[] {
-  if (!isHalfMultiplier(multiplier) || !levels.length) {
+  if (Number.isInteger(multiplier) || !levels.length) {
     return levels.map((level) => ({
       price: level.price,
       qty: scaleQty(level.qty, multiplier),
