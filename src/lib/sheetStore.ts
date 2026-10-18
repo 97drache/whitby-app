@@ -17,7 +17,7 @@ function isLevel(value: unknown): value is Level {
 export function isExtractedSheet(value: unknown): value is ExtractedSheet {
   if (!value || typeof value !== "object") return false;
   const data = value as Record<string, unknown>;
-  if (!Array.isArray(data.buys) || !data.buys.length || !data.buys.every(isLevel)) return false;
+  if (!Array.isArray(data.buys) || !data.buys.every(isLevel)) return false;
   if (!Array.isArray(data.sells) || !data.sells.every(isLevel)) return false;
   return Number.isFinite(Number(data.holdings));
 }

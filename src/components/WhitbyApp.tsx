@@ -705,12 +705,14 @@ function ScaledTable({ sheet, multiplier }: { sheet: ExtractedSheet; multiplier:
           <span className="text-[20px] leading-none tabular font-semibold text-[#3a2a30]">{formatQty(holdings)}</span>
         </div>
         <p className="px-1 text-center text-[13px] font-normal text-[#3a2a30]">Limit VWAP: 일반예약 + 장마감 30분전</p>
-        <LevelTable caption="예약매수" tone="buy" rows={buys} />
+        {buys.length > 0 && <LevelTable caption="예약매수" tone="buy" rows={buys} />}
         {sells.length > 0 && <LevelTable caption="예약매도" tone="sell" rows={sells} />}
       </div>
-      <p className="mt-5 text-sm font-semibold tabular text-[#c45c78]">
-        매수금 ${formatUsd(buyNotional(buys))}
-      </p>
+      {buys.length > 0 && (
+        <p className="mt-5 text-sm font-semibold tabular text-[#c45c78]">
+          매수금 ${formatUsd(buyNotional(buys))}
+        </p>
+      )}
     </div>
   );
 }

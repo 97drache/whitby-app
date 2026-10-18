@@ -15,7 +15,7 @@ export const maxDuration = 60;
 const PROMPT = `You are reading a Korean trading spreadsheet screenshot.
 
 There are TWO separate "Limit Vwap" blocks:
-1) UPPER Limit Vwap = BUY orders. Columns are 매수가 (buy price) and 개수 (quantity). There may be 1, 2, or 3 rows.
+1) UPPER Limit Vwap = BUY orders. Columns are 매수가 (buy price) and 개수 (quantity). There may be 0, 1, 2, or 3 rows. If buying cash is exhausted, this block can be empty — no 매수가 and no 개수. In that case return "buys": [] and do NOT invent prices from 종가, 보유평단, or 매도가.
 2) LOWER Limit Vwap = SELL orders. Columns are 매도가 (sell price) and 개수 (quantity). There may be 1, 2, or 3 rows.
 
 "현재 보유 개수" is a single number on the RIGHT of the UPPER block, often on a light green background. Do not confuse it with 직전 매매 개수, 잔금, 종가, or 평단.
@@ -48,7 +48,8 @@ Rules:
 - prices are the left number in each Limit Vwap row; qty is the right number.
 - Use dots as decimal separators. Strip thousands commas.
 - Do not invent rows. Omit empty rows.
-- BUY qty is always a number. Never use remainingAll on buys. 남은전부 never appears in the UPPER/buy block.
+- Empty buy block is valid. Return an empty buys array. Do not copy a sell price into buys.
+- BUY qty is always a number when a buy row exists. Never use remainingAll on buys. 남은전부 never appears in the UPPER/buy block.
 - SELL quantity may be the Korean text "남은전부" / "남은 전부" (or similar: 잔량전부, remaining all) instead of a number. KEEP that row. Set remainingAll: true. Also set qtyText to the exact cell text (e.g. "남은전부"). You may omit qty or set it null. Do NOT replace 남은전부 with a guessed number unless remainingAll is true.
 - remainingAll is SELL-only. It can be the only sell row or mixed with numeric sell qty rows. A single sell equal to 현재 보유 개수 is often 남은전부.
 - holdings must be the 현재 보유 개수 integer.
@@ -132,7 +133,6 @@ function parseSheet(raw: unknown): ExtractedSheet {
     ),
     holdings,
   );
-  if (!buys.length) throw new Error("매수 Limit VWAP를 찾지 못했습니다.");
   return {
     buys,
     sells,
